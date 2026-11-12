@@ -55,13 +55,7 @@ public partial class MainWindow : Window
         ClosePdfPreview();
 
         PdfSplitStudioHost.Visibility = Visibility.Visible;
-        NavPdfSplitBtn.Tag = "Active";
-        NavWorkspaceBtn.Tag = null;
-        NavQueueBtn.Tag = null;
-        NavDocBuilderBtn.Tag = null;
-        NavPresentationBtn.Tag = null;
-        NavPdfMergeBtn.Tag = null;
-        NavPdfOrganizeBtn.Tag = null;
+        SetActiveNavButton(NavPdfSplitBtn);
 
         // Determine path to load
         string? pathToLoad = targetPdfPath;
@@ -89,6 +83,10 @@ public partial class MainWindow : Window
 
         PdfSplitStudioHost.Visibility = Visibility.Collapsed;
         NavPdfSplitBtn.Tag = null;
+        if (!IsAnyStudioOpen())
+        {
+            SetActiveNavButton(NavWorkspaceBtn);
+        }
     }
 
     private void NavPdfSplit_Click(object sender, RoutedEventArgs e)
@@ -566,6 +564,23 @@ public partial class MainWindow : Window
         }
         catch (OperationCanceledException)
         {
+            splitSw.Stop();
+            App.Services.HistoryStore.Record(new OperationRecord(
+                Id: Guid.NewGuid().ToString("N"),
+                ActionId: "pdf.split",
+                ActionName: "Split PDF",
+                Category: OperationCategory.Pdf,
+                InputPaths: [_pdfSplitSourcePath ?? ""],
+                OutputPaths: [],
+                StartedAtUtc: splitStart,
+                CompletedAtUtc: DateTimeOffset.UtcNow,
+                Duration: splitSw.Elapsed,
+                Status: OperationStatus.Cancelled,
+                Options: new Dictionary<string, string> { ["Mode"] = mode.ToString() },
+                PresetName: null,
+                FailureReason: "Split operation cancelled by user.",
+                RetryOfOperationId: null));
+
             PdfSplitResultCard.Background = (Brush)FindResource("AmberBgBrush");
             PdfSplitResultCard.BorderBrush = (Brush)FindResource("AmberBrush");
             PdfSplitResultTitle.Text = "Split Operation Cancelled";
@@ -576,6 +591,23 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
+            splitSw.Stop();
+            App.Services.HistoryStore.Record(new OperationRecord(
+                Id: Guid.NewGuid().ToString("N"),
+                ActionId: "pdf.split",
+                ActionName: "Split PDF",
+                Category: OperationCategory.Pdf,
+                InputPaths: [_pdfSplitSourcePath ?? ""],
+                OutputPaths: [],
+                StartedAtUtc: splitStart,
+                CompletedAtUtc: DateTimeOffset.UtcNow,
+                Duration: splitSw.Elapsed,
+                Status: OperationStatus.Failed,
+                Options: new Dictionary<string, string> { ["Mode"] = mode.ToString() },
+                PresetName: null,
+                FailureReason: ex.Message,
+                RetryOfOperationId: null));
+
             PdfSplitResultCard.Background = (Brush)FindResource("DangerBgBrush");
             PdfSplitResultCard.BorderBrush = (Brush)FindResource("DangerBrush");
             PdfSplitResultTitle.Text = "Split Operation Failed";

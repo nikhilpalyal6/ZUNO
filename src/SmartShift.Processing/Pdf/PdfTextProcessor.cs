@@ -100,6 +100,7 @@ public sealed class PdfTextProcessor : IFileProcessor
 
         long outputBytes = new FileInfo(result.OutputPath).Length;
 
+        var qr = result.QualityReport;
         var details = new Dictionary<string, string>
         {
             ["actionId"] = ActionIds.ExtractPdfText,
@@ -113,6 +114,8 @@ public sealed class PdfTextProcessor : IFileProcessor
             ["totalPages"] = result.TotalPagesInDoc.ToString(),
             ["pagesExtracted"] = result.PagesExtractedCount.ToString(),
             ["isScanned"] = result.IsScannedOrImageOnly ? "true" : "false",
+            ["qualityStatus"] = (qr?.Status ?? (result.IsScannedOrImageOnly ? PdfConversionStatus.SuccessfulWithLimitations : PdfConversionStatus.Successful)).ToString(),
+            ["warnings"] = string.Join("; ", qr?.Warnings ?? []),
             ["summaryNote"] = result.SummaryNote,
             ["originalUnchanged"] = "true"
         };

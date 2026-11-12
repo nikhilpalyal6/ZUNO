@@ -63,12 +63,25 @@ public sealed class UnifiedConversionService : IUnifiedConversionService
                 or DetectedFormat.Pptx
                 or DetectedFormat.Txt
                 or DetectedFormat.Png
-                or DetectedFormat.Jpeg;
+                or DetectedFormat.Jpeg
+                or DetectedFormat.Webp;
         }
 
         if (source == DetectedFormat.Docx)
         {
-            return target is DetectedFormat.Pdf or DetectedFormat.Pptx;
+            return target is DetectedFormat.Pdf
+                or DetectedFormat.Pptx
+                or DetectedFormat.Txt
+                or DetectedFormat.Html;
+        }
+
+        if (source == DetectedFormat.Pptx)
+        {
+            return target is DetectedFormat.Pdf
+                or DetectedFormat.Png
+                or DetectedFormat.Jpeg
+                or DetectedFormat.Webp
+                or DetectedFormat.Txt;
         }
 
         return false;
@@ -192,6 +205,20 @@ public sealed class UnifiedConversionService : IUnifiedConversionService
                     "JPEG Images",
                     "Export PDF pages as standard JPEG image files."),
 
+                DetectedFormat.Webp => new ConversionRoute(
+                    source.Format,
+                    targetFormat,
+                    ActionIds.ExportPdfPages,
+                    new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                    {
+                        ["format"] = "webp",
+                        ["dpi"] = opts.TryGetValue("dpi", out var dpi) && !string.IsNullOrWhiteSpace(dpi) ? dpi.Trim() : "150",
+                        ["quality"] = opts.TryGetValue("quality", out var q) && !string.IsNullOrWhiteSpace(q) ? q.Trim() : "85",
+                        ["pageRange"] = pageRange
+                    },
+                    "WebP Images",
+                    "Export PDF pages as lightweight, modern WebP image files."),
+
                 _ => throw new NotSupportedException($"Target format {targetFormat} is not supported for PDF conversion.")
             };
         }
@@ -217,7 +244,91 @@ public sealed class UnifiedConversionService : IUnifiedConversionService
                     "PowerPoint Presentation (.pptx)",
                     "Extract document headings and paragraphs to create an editable PowerPoint presentation deck."),
 
+                DetectedFormat.Txt => new ConversionRoute(
+                    source.Format,
+                    targetFormat,
+                    ActionIds.ConvertDocxToTxt,
+                    opts,
+                    "Plain Text (.txt)",
+                    "Extract Word document text to clean UTF-8 plain text with table formatting."),
+
+                DetectedFormat.Html => new ConversionRoute(
+                    source.Format,
+                    targetFormat,
+                    ActionIds.ConvertDocxToHtml,
+                    opts,
+                    "HTML Document (.html)",
+                    "Convert Word document into clean, self-contained HTML5 with embedded images."),
+
                 _ => throw new NotSupportedException($"Target format {targetFormat} is not supported for Word document conversion.")
+            };
+        }
+
+        // 4. PowerPoint Presentation (PPTX) Source
+        if (source.Format == DetectedFormat.Pptx)
+        {
+            var pageRange = opts.TryGetValue("pageRange", out var pr) && !string.IsNullOrWhiteSpace(pr) ? pr.Trim() : "all";
+
+            return targetFormat switch
+            {
+                DetectedFormat.Pdf => new ConversionRoute(
+                    source.Format,
+                    targetFormat,
+                    ActionIds.ConvertPptxToPdf,
+                    new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) { ["pageRange"] = pageRange },
+                    "PDF Document (.pdf)",
+                    "Convert PowerPoint slides into vector PDF pages with text and shapes."),
+
+                DetectedFormat.Png => new ConversionRoute(
+                    source.Format,
+                    targetFormat,
+                    ActionIds.ExportPptxImages,
+                    new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                    {
+                        ["format"] = "png",
+                        ["dpi"] = opts.TryGetValue("dpi", out var dpi) && !string.IsNullOrWhiteSpace(dpi) ? dpi.Trim() : "150",
+                        ["pageRange"] = pageRange
+                    },
+                    "PNG Images",
+                    "Export PowerPoint slides as high-resolution PNG image files."),
+
+                DetectedFormat.Jpeg => new ConversionRoute(
+                    source.Format,
+                    targetFormat,
+                    ActionIds.ExportPptxImages,
+                    new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                    {
+                        ["format"] = "jpeg",
+                        ["dpi"] = opts.TryGetValue("dpi", out var dpi) && !string.IsNullOrWhiteSpace(dpi) ? dpi.Trim() : "150",
+                        ["quality"] = opts.TryGetValue("quality", out var q) && !string.IsNullOrWhiteSpace(q) ? q.Trim() : "85",
+                        ["pageRange"] = pageRange
+                    },
+                    "JPEG Images",
+                    "Export PowerPoint slides as standard JPEG image files."),
+
+                DetectedFormat.Webp => new ConversionRoute(
+                    source.Format,
+                    targetFormat,
+                    ActionIds.ExportPptxImages,
+                    new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                    {
+                        ["format"] = "webp",
+                        ["dpi"] = opts.TryGetValue("dpi", out var dpi) && !string.IsNullOrWhiteSpace(dpi) ? dpi.Trim() : "150",
+                        ["quality"] = opts.TryGetValue("quality", out var q) && !string.IsNullOrWhiteSpace(q) ? q.Trim() : "85",
+                        ["pageRange"] = pageRange
+                    },
+                    "WebP Images",
+                    "Export PowerPoint slides as lightweight, modern WebP image files."),
+
+                DetectedFormat.Txt => new ConversionRoute(
+                    source.Format,
+                    targetFormat,
+                    ActionIds.ExtractPptxText,
+                    new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) { ["pageRange"] = pageRange },
+                    "Plain Text (.txt)",
+                    "Extract PowerPoint slide text, titles, and tables to clean UTF-8 plain text."),
+
+                _ => throw new NotSupportedException($"Target format {targetFormat} is not supported for PowerPoint presentation conversion.")
             };
         }
 

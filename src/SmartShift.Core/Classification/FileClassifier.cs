@@ -234,6 +234,7 @@ public sealed class FileClassifier : IFileTypeDetector
             ".xlsx" => DetectedFormat.Xlsx,
             ".txt" or ".text" => DetectedFormat.Txt,
             ".md" or ".markdown" => DetectedFormat.Markdown,
+            ".html" or ".htm" => DetectedFormat.Html,
             ".zip" => DetectedFormat.Zip,
             _ => DetectedFormat.Unknown
         };
@@ -242,7 +243,7 @@ public sealed class FileClassifier : IFileTypeDetector
     public static FileCategory CategoryFromFormat(DetectedFormat format) => format switch
     {
         DetectedFormat.Png or DetectedFormat.Jpeg or DetectedFormat.Webp or DetectedFormat.Gif or DetectedFormat.Bmp or DetectedFormat.Tiff => FileCategory.Image,
-        DetectedFormat.Pdf or DetectedFormat.Docx or DetectedFormat.Txt or DetectedFormat.Markdown => FileCategory.Document,
+        DetectedFormat.Pdf or DetectedFormat.Docx or DetectedFormat.Txt or DetectedFormat.Markdown or DetectedFormat.Html => FileCategory.Document,
         DetectedFormat.Pptx => FileCategory.Presentation,
         DetectedFormat.Xlsx => FileCategory.Spreadsheet,
         DetectedFormat.Zip => FileCategory.Archive,
@@ -263,6 +264,7 @@ public sealed class FileClassifier : IFileTypeDetector
         DetectedFormat.Xlsx => "Excel (XLSX)",
         DetectedFormat.Txt => "Plain Text",
         DetectedFormat.Markdown => "Markdown",
+        DetectedFormat.Html => "HTML Document",
         DetectedFormat.Zip => "ZIP Archive",
         DetectedFormat.Empty => "an empty file",
         _ => "an unknown format"
@@ -430,7 +432,7 @@ public sealed class FileClassifier : IFileTypeDetector
             var span = buffer.AsSpan(0, read);
             bool isCleanText = LooksLikePlainText(span);
 
-            if (hint is DetectedFormat.Txt or DetectedFormat.Markdown)
+            if (hint is DetectedFormat.Txt or DetectedFormat.Markdown or DetectedFormat.Html)
             {
                 if (isCleanText)
                 {

@@ -12,6 +12,8 @@ using SkiaSharp;
 using SmartShift.Core.IO;
 using UglyToad.PdfPig;
 using UglyToad.PdfPig.Content;
+using UglyToad.PdfPig.DocumentLayoutAnalysis.PageSegmenter;
+using UglyToad.PdfPig.DocumentLayoutAnalysis.ReadingOrderDetector;
 using A = DocumentFormat.OpenXml.Drawing;
 using DW = DocumentFormat.OpenXml.Drawing.Wordprocessing;
 using PIC = DocumentFormat.OpenXml.Drawing.Pictures;
@@ -24,7 +26,8 @@ public sealed record PdfDocxResult(
     int PagesConvertedCount,
     int TotalCharactersExtracted,
     bool IsScannedOrImageOnly,
-    string SummaryNote);
+    string SummaryNote,
+    PdfConversionQualityReport? QualityReport = null);
 
 public static class PdfToDocxConverter
 {
@@ -84,6 +87,9 @@ public static class PdfToDocxConverter
             int totalChars = 0;
             bool isScannedOrEmpty = false;
             int imageCount = 0;
+            int headingsCount = 0;
+            int tablesCount = 0;
+            var warnings = new List<string>();
 
             using (var docx = WordprocessingDocument.Create(tempPartial, WordprocessingDocumentType.Document))
             {
@@ -95,6 +101,8 @@ public static class PdfToDocxConverter
 
                 // First pass: detect if document has any extractable text
                 int detectedChars = 0;
+                var allFontSizes = new List<double>();
+
                 foreach (var pageNum in pagesToConvert)
                 {
                     var page = pdfDoc.GetPage(pageNum);
@@ -103,16 +111,22 @@ public static class PdfToDocxConverter
                         if (!string.IsNullOrWhiteSpace(letter.Value))
                         {
                             detectedChars++;
+                            if (letter.PointSize > 0)
+                            {
+                                allFontSizes.Add(letter.PointSize);
+                            }
                         }
                     }
                 }
 
                 isScannedOrEmpty = (detectedChars == 0);
+                double medianFontSize = allFontSizes.Count > 0 ? Median(allFontSizes) : 11.0;
 
                 if (isScannedOrEmpty)
                 {
                     // Scanned / Image-only PDF: Render pages as high-fidelity images
                     progress?.Report(new ProcessingProgress(20, "Scanned document detected. Rendering full-page images…"));
+                    warnings.Add("Document appears to be scanned or image-only without an extractable text layer. Pages embedded as high-fidelity images. Text is not editable because no OCR engine is installed.");
 
                     for (int i = 0; i < pagesToConvert.Count; i++)
                     {
@@ -137,7 +151,7 @@ public static class PdfToDocxConverter
                 }
                 else
                 {
-                    // Text-based PDF: Extract structured paragraphs, lines, runs, and images
+                    // Text-based PDF: Extract structured paragraphs, lines, headings, tables, and images
                     for (int i = 0; i < pagesToConvert.Count; i++)
                     {
                         cancellationToken.ThrowIfCancellationRequested();
@@ -151,34 +165,51 @@ public static class PdfToDocxConverter
 
                         if (words.Count > 0)
                         {
-                            // Group words into lines by Y coordinate (PDF Y starts from bottom)
-                            var lines = GroupWordsIntoLines(words);
-                            foreach (var lineWords in lines)
+                            var pageLines = GroupWordsIntoLines(words);
+                            int lineIdx = 0;
+
+                            while (lineIdx < pageLines.Count)
                             {
-                                var para = new Paragraph();
-                                var paraProps = new ParagraphProperties(
-                                    new SpacingBetweenLines { After = "120", Line = "240", LineRule = LineSpacingRuleValues.Auto });
-                                para.AppendChild(paraProps);
+                                var tableLines = DetectTableLines(pageLines, lineIdx);
+                                if (tableLines != null && tableLines.Count >= 2)
+                                {
+                                    // Reconstruct Table
+                                    var table = BuildOpenXmlTable(tableLines, ref totalChars);
+                                    body.AppendChild(table);
+                                    tablesCount++;
+                                    lineIdx += tableLines.Count;
+                                    continue;
+                                }
 
-                                var lineText = string.Join(" ", lineWords.Select(w => w.Text));
-                                totalChars += lineText.Length;
+                                // Gather non-table lines until next table or end of page
+                                var nonTableLines = new List<List<Word>>();
+                                while (lineIdx < pageLines.Count && DetectTableLines(pageLines, lineIdx) == null)
+                                {
+                                    nonTableLines.Add(pageLines[lineIdx]);
+                                    lineIdx++;
+                                }
 
-                                bool isBold = lineWords.Any(w => w.FontName?.Contains("Bold", StringComparison.OrdinalIgnoreCase) == true);
-                                bool isItalic = lineWords.Any(w => w.FontName?.Contains("Italic", StringComparison.OrdinalIgnoreCase) == true);
+                                if (nonTableLines.Count > 0)
+                                {
+                                    var nonTableWords = nonTableLines.SelectMany(l => l).ToList();
+                                    var blocks = TrySegmentBlocks(nonTableWords);
 
-                                var runProps = new RunProperties();
-                                if (isBold) runProps.AppendChild(new Bold());
-                                if (isItalic) runProps.AppendChild(new Italic());
+                                    if (blocks != null && blocks.Count > 0)
+                                    {
+                                        foreach (var block in blocks)
+                                        {
+                                            var blockWords = block.TextLines.SelectMany(tl => tl.Words).ToList();
+                                            if (blockWords.Count == 0) continue;
 
-                                // Font size in half-points (e.g. 11pt = 22)
-                                double avgFontPt = lineWords.Average(w => w.BoundingBox.Height);
-                                int fontSizeHalfPt = Math.Clamp((int)Math.Round(avgFontPt * 2.0), 16, 72);
-                                runProps.AppendChild(new FontSize { Val = fontSizeHalfPt.ToString() });
-
-                                var run = new Run(new Text(lineText) { Space = SpaceProcessingModeValues.Preserve });
-                                run.RunProperties = runProps;
-                                para.AppendChild(run);
-                                body.AppendChild(para);
+                                            var lines = GroupWordsIntoLines(blockWords);
+                                            ProcessLinesIntoBody(lines, body, medianFontSize, ref totalChars, ref headingsCount);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        ProcessLinesIntoBody(nonTableLines, body, medianFontSize, ref totalChars, ref headingsCount);
+                                    }
+                                }
                             }
                         }
 
@@ -196,7 +227,7 @@ public static class PdfToDocxConverter
                         }
                         catch
                         {
-                            // Non-fatal: if an embedded image stream has unsupported filter, continue text extraction
+                            // Non-fatal: if an embedded image stream has unsupported filter, continue
                         }
 
                         // Page break between PDF pages
@@ -223,10 +254,6 @@ public static class PdfToDocxConverter
             using (var package = WordprocessingDocument.Open(tempPartial, false))
             {
                 var validationErrors = validator.Validate(package).ToList();
-                if (validationErrors.Any(e => e.ErrorType == ValidationErrorType.Schema && !e.Description.Contains("attribute")))
-                {
-                    // Log warning if non-critical schema differences exist
-                }
             }
 
             // Atomically promote
@@ -239,11 +266,31 @@ public static class PdfToDocxConverter
             sw.Stop();
             long outputBytes = new FileInfo(finalPath).Length;
 
+            var status = isScannedOrEmpty
+                ? PdfConversionStatus.SuccessfulWithLimitations
+                : PdfConversionStatus.Successful;
+
             string summaryNote = isScannedOrEmpty
                 ? $"Converted {pagesToConvert.Count} page(s) to DOCX ({FileSizeFormatter.Format(outputBytes)}). Note: Document contains no extractable text; pages embedded as high-fidelity images (OCR required for text editing)."
-                : $"Converted {pagesToConvert.Count} page(s) ({totalChars:N0} characters, {imageCount} image(s)) into editable DOCX in {sw.ElapsedMilliseconds} ms.";
+                : $"Converted {pagesToConvert.Count} page(s) ({totalChars:N0} characters, {imageCount} image(s), {headingsCount} heading(s), {tablesCount} table(s)) into editable DOCX in {sw.ElapsedMilliseconds} ms.";
 
             progress?.Report(new ProcessingProgress(100, "DOCX conversion complete."));
+
+            var qualityReport = new PdfConversionQualityReport(
+                SourcePath: inputPath,
+                OutputPath: finalPath,
+                OutputFiles: [finalPath],
+                ConversionMode: isScannedOrEmpty ? "DocxImageFallback" : "DocxStructuredReconstruction",
+                TotalInputPages: totalPages,
+                PagesProcessed: pagesToConvert.Count,
+                TotalCharactersExtracted: totalChars,
+                ImagesPreservedCount: imageCount,
+                TablesReconstructedCount: tablesCount,
+                HeadingsDetectedCount: headingsCount,
+                Status: status,
+                Warnings: warnings,
+                OutputSizeBytes: outputBytes,
+                SummaryNote: summaryNote);
 
             return new PdfDocxResult(
                 finalPath,
@@ -251,7 +298,8 @@ public static class PdfToDocxConverter
                 pagesToConvert.Count,
                 totalChars,
                 isScannedOrEmpty,
-                summaryNote);
+                summaryNote,
+                qualityReport);
         }
         catch
         {
@@ -262,6 +310,237 @@ public static class PdfToDocxConverter
             catch { }
             throw;
         }
+    }
+
+    private static IReadOnlyList<UglyToad.PdfPig.DocumentLayoutAnalysis.TextBlock>? TrySegmentBlocks(List<Word> words)
+    {
+        try
+        {
+            if (words.Count < 4) return null;
+            var blocks = DocstrumBoundingBoxes.Instance.GetBlocks(words);
+            if (blocks != null && blocks.Count > 0)
+            {
+                return DefaultReadingOrderDetector.Instance.Get(blocks).ToList();
+            }
+        }
+        catch
+        {
+            // Fall back to line grouping
+        }
+        return null;
+    }
+
+    private static void ProcessLinesIntoBody(
+        List<List<Word>> lines,
+        Body body,
+        double medianFontSize,
+        ref int totalChars,
+        ref int headingsCount)
+    {
+        if (lines.Count == 0) return;
+
+        foreach (var currentLineWords in lines)
+        {
+            var lineText = string.Join(" ", currentLineWords.Select(w => w.Text));
+            totalChars += lineText.Length;
+
+            double avgFontPt = currentLineWords.Average(GetWordFontSize);
+            bool isBold = currentLineWords.Any(w => w.FontName?.Contains("Bold", StringComparison.OrdinalIgnoreCase) == true);
+            bool isItalic = currentLineWords.Any(w => w.FontName?.Contains("Italic", StringComparison.OrdinalIgnoreCase) == true);
+
+            bool isHeading = (avgFontPt >= 14.0 || (avgFontPt >= medianFontSize * 1.25 && isBold)) && lineText.Length < 120;
+
+            var para = new Paragraph();
+            var paraProps = new ParagraphProperties();
+
+            if (isHeading)
+            {
+                headingsCount++;
+                string styleVal = avgFontPt >= 17.0 ? "Heading1" : "Heading2";
+                paraProps.ParagraphStyleId = new ParagraphStyleId { Val = styleVal };
+                paraProps.SpacingBetweenLines = new SpacingBetweenLines
+                {
+                    Before = "200",
+                    After = "120",
+                    Line = "240",
+                    LineRule = LineSpacingRuleValues.Auto
+                };
+            }
+            else
+            {
+                paraProps.SpacingBetweenLines = new SpacingBetweenLines
+                {
+                    After = "100",
+                    Line = "240",
+                    LineRule = LineSpacingRuleValues.Auto
+                };
+            }
+            para.AppendChild(paraProps);
+
+            var runProps = new RunProperties();
+            if (isBold || isHeading) runProps.AppendChild(new Bold());
+            if (isItalic) runProps.AppendChild(new Italic());
+
+            int fontSizeHalfPt = Math.Clamp((int)Math.Round(avgFontPt * 2.0), 16, 72);
+            runProps.AppendChild(new FontSize { Val = fontSizeHalfPt.ToString() });
+
+            var run = new Run(new Text(lineText) { Space = SpaceProcessingModeValues.Preserve });
+            run.RunProperties = runProps;
+            para.AppendChild(run);
+            body.AppendChild(para);
+        }
+    }
+
+    private static double GetWordFontSize(Word w)
+    {
+        if (w.Letters != null && w.Letters.Count > 0)
+        {
+            return w.Letters.Average(l => l.PointSize);
+        }
+        return w.BoundingBox.Height;
+    }
+
+    private static List<List<Word>>? DetectTableLines(List<List<Word>> lines, int startIndex)
+    {
+        var candidateRows = new List<List<Word>>();
+        int expectedColumns = -1;
+
+        for (int i = startIndex; i < lines.Count; i++)
+        {
+            var line = lines[i];
+            var clusters = SplitLineIntoColumnClusters(line);
+            // Table row must have at least 2 columns and cells shouldn't be full prose paragraphs (max 4 words per cell)
+            if (clusters.Count < 2 || clusters.Any(c => c.Count > 4))
+            {
+                break;
+            }
+
+            if (expectedColumns == -1)
+            {
+                expectedColumns = clusters.Count;
+                candidateRows.Add(line);
+            }
+            else if (clusters.Count == expectedColumns)
+            {
+                candidateRows.Add(line);
+            }
+            else
+            {
+                break;
+            }
+        }
+
+        return candidateRows.Count >= 2 ? candidateRows : null;
+    }
+
+    private static List<List<Word>> SplitLineIntoColumnClusters(List<Word> words)
+    {
+        var clusters = new List<List<Word>>();
+        if (words.Count == 0) return clusters;
+
+        var sorted = words.OrderBy(w => w.BoundingBox.Left).ToList();
+        var currentCluster = new List<Word> { sorted[0] };
+
+        for (int i = 1; i < sorted.Count; i++)
+        {
+            var prev = sorted[i - 1];
+            var curr = sorted[i];
+            double gap = curr.BoundingBox.Left - prev.BoundingBox.Right;
+
+            // Gap greater than 16 pt indicates separate column cell
+            if (gap > 16.0)
+            {
+                clusters.Add(currentCluster);
+                currentCluster = new List<Word> { curr };
+            }
+            else
+            {
+                currentCluster.Add(curr);
+            }
+        }
+
+        if (currentCluster.Count > 0)
+        {
+            clusters.Add(currentCluster);
+        }
+
+        return clusters;
+    }
+
+    private static Table BuildOpenXmlTable(List<List<Word>> tableLines, ref int totalChars)
+    {
+        var table = new Table();
+
+        // Style table with clean borders and width
+        var tblPr = new TableProperties(
+            new TableBorders(
+                new TopBorder { Val = BorderValues.Single, Size = 4, Space = 0, Color = "D0D7DE" },
+                new BottomBorder { Val = BorderValues.Single, Size = 4, Space = 0, Color = "D0D7DE" },
+                new LeftBorder { Val = BorderValues.None },
+                new RightBorder { Val = BorderValues.None },
+                new InsideHorizontalBorder { Val = BorderValues.Single, Size = 4, Space = 0, Color = "E1E4E8" },
+                new InsideVerticalBorder { Val = BorderValues.None }),
+            new TableWidth { Type = TableWidthUnitValues.Pct, Width = "5000" }, // 100%
+            new TableCellMarginDefault(
+                new TopMargin { Width = "80", Type = TableWidthUnitValues.Dxa },
+                new BottomMargin { Width = "80", Type = TableWidthUnitValues.Dxa },
+                new LeftMargin { Width = "120", Type = TableWidthUnitValues.Dxa },
+                new RightMargin { Width = "120", Type = TableWidthUnitValues.Dxa }));
+
+        table.AppendChild(tblPr);
+
+        bool isHeader = true;
+        foreach (var line in tableLines)
+        {
+            var row = new TableRow();
+            var clusters = SplitLineIntoColumnClusters(line);
+
+            foreach (var cluster in clusters)
+            {
+                var cell = new TableCell();
+                var cellPr = new TableCellProperties();
+
+                if (isHeader)
+                {
+                    cellPr.AppendChild(new Shading { Val = ShadingPatternValues.Clear, Fill = "F6F8FA" });
+                }
+                cell.AppendChild(cellPr);
+
+                var cellText = string.Join(" ", cluster.Select(w => w.Text));
+                totalChars += cellText.Length;
+
+                bool isBold = cluster.Any(w => w.FontName?.Contains("Bold", StringComparison.OrdinalIgnoreCase) == true) || isHeader;
+                bool isItalic = cluster.Any(w => w.FontName?.Contains("Italic", StringComparison.OrdinalIgnoreCase) == true);
+
+                var p = new Paragraph(new ParagraphProperties(new SpacingBetweenLines { After = "40", Line = "240", LineRule = LineSpacingRuleValues.Auto }));
+                var runProps = new RunProperties();
+                if (isBold) runProps.AppendChild(new Bold());
+                if (isItalic) runProps.AppendChild(new Italic());
+
+                double avgFont = cluster.Average(GetWordFontSize);
+                int fontHalfPt = Math.Clamp((int)Math.Round(avgFont * 2.0), 16, 48);
+                runProps.AppendChild(new FontSize { Val = fontHalfPt.ToString() });
+
+                var run = new Run(new Text(cellText) { Space = SpaceProcessingModeValues.Preserve });
+                run.RunProperties = runProps;
+                p.AppendChild(run);
+                cell.AppendChild(p);
+
+                row.AppendChild(cell);
+            }
+
+            table.AppendChild(row);
+            isHeader = false;
+        }
+
+        return table;
+    }
+
+    private static double Median(List<double> values)
+    {
+        var sorted = values.OrderBy(v => v).ToList();
+        int mid = sorted.Count / 2;
+        return sorted.Count % 2 != 0 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2.0;
     }
 
     private static List<List<Word>> GroupWordsIntoLines(List<Word> words)

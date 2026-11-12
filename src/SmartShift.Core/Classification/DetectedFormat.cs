@@ -16,5 +16,6 @@ public enum DetectedFormat
     Xlsx = 11,
     Txt = 12,
     Markdown = 13,
-    Zip = 14
+    Zip = 14,
+    Html = 15
 }

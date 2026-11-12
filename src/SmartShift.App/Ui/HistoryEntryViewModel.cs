@@ -148,7 +148,14 @@ public sealed class HistoryEntryViewModel : INotifyPropertyChanged
     {
         if (HasOutput)
         {
-            Clipboard.SetText(PrimaryOutputPath!);
+            try
+            {
+                Clipboard.SetText(PrimaryOutputPath!);
+            }
+            catch
+            {
+                // Clipboard may be temporarily locked by another Windows process
+            }
         }
     }
 

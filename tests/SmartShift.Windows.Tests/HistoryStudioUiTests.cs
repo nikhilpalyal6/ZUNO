@@ -369,4 +369,68 @@ public sealed class HistoryStudioUiTests
             Assert.Equal(Visibility.Collapsed, workflowsPanel.Visibility);
         });
     }
+
+    [Fact]
+    public void SidebarStudioSwitching_MutuallyExclusiveActiveTags()
+    {
+        RunOnSta(() =>
+        {
+            var window = new MainWindow();
+            var navWorkspace = (Button)window.FindName("NavWorkspaceBtn");
+            var navQueue = (Button)window.FindName("NavQueueBtn");
+            var navDocBuilder = (Button)window.FindName("NavDocBuilderBtn");
+            var navPresentation = (Button)window.FindName("NavPresentationBtn");
+            var navPdfMerge = (Button)window.FindName("NavPdfMergeBtn");
+            var navPdfSplit = (Button)window.FindName("NavPdfSplitBtn");
+            var navPdfOrganize = (Button)window.FindName("NavPdfOrganizeBtn");
+
+            Assert.NotNull(navWorkspace);
+            Assert.NotNull(navQueue);
+            Assert.NotNull(navDocBuilder);
+            Assert.NotNull(navPresentation);
+            Assert.NotNull(navPdfMerge);
+            Assert.NotNull(navPdfSplit);
+            Assert.NotNull(navPdfOrganize);
+
+            // Initially, Workspace is active
+            Assert.Equal("Active", navWorkspace.Tag);
+            Assert.Null(navQueue.Tag);
+            Assert.Null(navDocBuilder.Tag);
+            Assert.Null(navPresentation.Tag);
+            Assert.Null(navPdfMerge.Tag);
+            Assert.Null(navPdfSplit.Tag);
+            Assert.Null(navPdfOrganize.Tag);
+
+            // Open Batch Studio
+            window.OpenBatchStudio();
+            DoEvents();
+            Assert.Null(navWorkspace.Tag);
+            Assert.Equal("Active", navQueue.Tag);
+            Assert.Null(navPdfSplit.Tag);
+
+            // Open PDF Split Studio
+            window.OpenPdfSplitStudio();
+            DoEvents();
+            Assert.Null(navQueue.Tag);
+            Assert.Equal("Active", navPdfSplit.Tag);
+
+            // Open PDF Organize Studio
+            window.OpenPdfOrganizeStudio();
+            DoEvents();
+            Assert.Null(navPdfSplit.Tag);
+            Assert.Equal("Active", navPdfOrganize.Tag);
+
+            // Open PDF Merge Studio
+            window.OpenPdfMergeStudio();
+            DoEvents();
+            Assert.Null(navPdfOrganize.Tag);
+            Assert.Equal("Active", navPdfMerge.Tag);
+
+            // Close studio -> returns to Workspace
+            window.ClosePdfMergeStudio();
+            DoEvents();
+            Assert.Equal("Active", navWorkspace.Tag);
+            Assert.Null(navPdfMerge.Tag);
+        });
+    }
 }

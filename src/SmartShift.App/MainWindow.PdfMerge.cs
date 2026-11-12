@@ -43,9 +43,7 @@ public partial class MainWindow : Window
         ClosePdfPreview();
 
         PdfMergeStudioHost.Visibility = Visibility.Visible;
-        NavPdfMergeBtn.Tag = "Active";
-        NavPdfSplitBtn.Tag = null;
-        NavPdfOrganizeBtn.Tag = null;
+        SetActiveNavButton(NavPdfMergeBtn);
 
         if (!string.IsNullOrWhiteSpace(initialPdfPath) && File.Exists(initialPdfPath))
         {
@@ -61,6 +59,10 @@ public partial class MainWindow : Window
     {
         PdfMergeStudioHost.Visibility = Visibility.Collapsed;
         NavPdfMergeBtn.Tag = null;
+        if (!IsAnyStudioOpen())
+        {
+            SetActiveNavButton(NavWorkspaceBtn);
+        }
     }
 
     private void NavPdfMerge_Click(object sender, RoutedEventArgs e)
@@ -370,9 +372,12 @@ public partial class MainWindow : Window
             PdfMergeProgressText.Text = p.Message;
         });
 
+        var orderedPaths = _pdfMergeItems.Select(i => i.FilePath).ToList();
+        var mergeStart = DateTimeOffset.UtcNow;
+        var mergeSw = Stopwatch.StartNew();
+
         try
         {
-            var orderedPaths = _pdfMergeItems.Select(i => i.FilePath).ToList();
             var desiredName = !string.IsNullOrWhiteSpace(PdfMergeOutputNameBox.Text)
                 ? PdfMergeOutputNameBox.Text.Trim()
                 : "Merged_Document.pdf";
@@ -384,9 +389,6 @@ public partial class MainWindow : Window
 
             App.Services.Outputs.EnsureRoot();
             var finalPath = App.Services.Outputs.Allocate(orderedPaths[0], desiredName);
-
-            var mergeStart = DateTimeOffset.UtcNow;
-            var mergeSw = Stopwatch.StartNew();
 
             var mergedPath = await App.Services.PdfMerge.MergeAsync(
                 orderedPaths,
@@ -420,10 +422,44 @@ public partial class MainWindow : Window
         }
         catch (OperationCanceledException)
         {
+            mergeSw.Stop();
+            App.Services.HistoryStore.Record(new OperationRecord(
+                Id: Guid.NewGuid().ToString("N"),
+                ActionId: "pdf.merge",
+                ActionName: "Merge PDFs",
+                Category: OperationCategory.Pdf,
+                InputPaths: orderedPaths,
+                OutputPaths: [],
+                StartedAtUtc: mergeStart,
+                CompletedAtUtc: DateTimeOffset.UtcNow,
+                Duration: mergeSw.Elapsed,
+                Status: OperationStatus.Cancelled,
+                Options: new Dictionary<string, string> { ["FileCount"] = orderedPaths.Count.ToString() },
+                PresetName: null,
+                FailureReason: "PDF merge was cancelled by user.",
+                RetryOfOperationId: null));
+
             ShowBanner("PDF merge was cancelled. Original files were not changed.", error: false);
         }
         catch (Exception ex)
         {
+            mergeSw.Stop();
+            App.Services.HistoryStore.Record(new OperationRecord(
+                Id: Guid.NewGuid().ToString("N"),
+                ActionId: "pdf.merge",
+                ActionName: "Merge PDFs",
+                Category: OperationCategory.Pdf,
+                InputPaths: orderedPaths,
+                OutputPaths: [],
+                StartedAtUtc: mergeStart,
+                CompletedAtUtc: DateTimeOffset.UtcNow,
+                Duration: mergeSw.Elapsed,
+                Status: OperationStatus.Failed,
+                Options: new Dictionary<string, string> { ["FileCount"] = orderedPaths.Count.ToString() },
+                PresetName: null,
+                FailureReason: ex.Message,
+                RetryOfOperationId: null));
+
             ShowBanner($"Merge error: {ex.Message}", error: true);
         }
         finally

@@ -186,6 +186,8 @@ public sealed class FileCapabilityRegistry : IFileCapabilityRegistry
                 ActionIds.PreviewPdf,
                 ActionIds.MergePdf,
                 ActionIds.SplitPdf,
+                ActionIds.WatermarkPdf,
+                ActionIds.EditPdfMetadata,
                 ActionIds.ImportToPresentationStudio
             ],
             SupportedConversionOutputs:
@@ -194,9 +196,10 @@ public sealed class FileCapabilityRegistry : IFileCapabilityRegistry
                 DetectedFormat.Pptx,
                 DetectedFormat.Txt,
                 DetectedFormat.Png,
-                DetectedFormat.Jpeg
+                DetectedFormat.Jpeg,
+                DetectedFormat.Webp
             ],
-            CanEdit: false,
+            CanEdit: true,
             CanImport: true,
             CanExport: true,
             IsSupported: true),
@@ -205,24 +208,32 @@ public sealed class FileCapabilityRegistry : IFileCapabilityRegistry
             Format: DetectedFormat.Docx,
             Category: FileCategory.Document,
             DisplayName: "Word Document",
-            Description: "Microsoft OpenXML Word Document (.docx). Supports structured preview, PDF/PPTX conversion, compression, and Presentation Studio.",
+            Description: "Microsoft OpenXML Word Document (.docx). Supports merging, page numbers, watermarks, metadata editing, conversion, compression, and Presentation Studio.",
             Extensions: [".docx"],
             PrimaryExtension: ".docx",
             Preview: PreviewCapability.Text,
             SupportedActionIds:
             [
                 ActionIds.ShowDocumentInfo,
+                ActionIds.MergeDocx,
+                ActionIds.AddDocxPageNumbers,
+                ActionIds.AddDocxWatermark,
+                ActionIds.EditDocxMetadata,
                 ActionIds.ConvertDocxToPdf,
                 ActionIds.ConvertDocxToPptx,
+                ActionIds.ConvertDocxToTxt,
+                ActionIds.ConvertDocxToHtml,
                 ActionIds.CompressDocx,
                 ActionIds.ImportToPresentationStudio
             ],
             SupportedConversionOutputs:
             [
                 DetectedFormat.Pdf,
-                DetectedFormat.Pptx
+                DetectedFormat.Pptx,
+                DetectedFormat.Txt,
+                DetectedFormat.Html
             ],
-            CanEdit: false,
+            CanEdit: true,
             CanImport: true,
             CanExport: true,
             IsSupported: true),
@@ -269,17 +280,44 @@ public sealed class FileCapabilityRegistry : IFileCapabilityRegistry
             Format: DetectedFormat.Pptx,
             Category: FileCategory.Presentation,
             DisplayName: "PowerPoint Presentation",
-            Description: "Microsoft OpenXML PowerPoint Presentation (.pptx). Can be generated from PDF and Presentation Studio.",
+            Description: "Microsoft OpenXML PowerPoint Presentation (.pptx). Supports PDF, image, and text conversion.",
             Extensions: [".pptx"],
             PrimaryExtension: ".pptx",
             Preview: PreviewCapability.None,
+            SupportedActionIds:
+            [
+                ActionIds.ShowDocumentInfo,
+                ActionIds.ConvertPptxToPdf,
+                ActionIds.ExportPptxImages,
+                ActionIds.ExtractPptxText
+            ],
+            SupportedConversionOutputs:
+            [
+                DetectedFormat.Pdf,
+                DetectedFormat.Png,
+                DetectedFormat.Jpeg,
+                DetectedFormat.Webp,
+                DetectedFormat.Txt
+            ],
+            CanEdit: false,
+            CanImport: true,
+            CanExport: true,
+            IsSupported: true),
+
+        new(
+            Format: DetectedFormat.Html,
+            Category: FileCategory.Document,
+            DisplayName: "HTML Document",
+            Description: "Hypertext Markup Language document (.html, .htm).",
+            Extensions: [".html", ".htm"],
+            PrimaryExtension: ".html",
+            Preview: PreviewCapability.Text,
             SupportedActionIds: [ActionIds.ShowDocumentInfo],
             SupportedConversionOutputs: [],
             CanEdit: false,
             CanImport: false,
             CanExport: true,
-            IsSupported: true,
-            UnsupportedReason: "PowerPoint presentations can be generated and exported, but modifying an existing presentation is not currently supported."),
+            IsSupported: true),
 
         new(
             Format: DetectedFormat.Xlsx,

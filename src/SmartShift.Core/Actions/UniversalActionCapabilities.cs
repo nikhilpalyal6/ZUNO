@@ -29,5 +29,11 @@ public sealed class UniversalActionCapabilities : IActionCapabilities
             or ActionIds.ConvertDocxToPdf
             or ActionIds.ConvertDocxToPptx
             or ActionIds.CompressDocx
+            or ActionIds.MergeDocx
+            or ActionIds.AddDocxPageNumbers
+            or ActionIds.AddDocxWatermark
+            or ActionIds.EditDocxMetadata
+            or ActionIds.WatermarkPdf
+            or ActionIds.EditPdfMetadata
             or ActionIds.UnifiedConvert;
 }

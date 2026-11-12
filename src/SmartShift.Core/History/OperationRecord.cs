@@ -36,7 +36,9 @@ public sealed record OperationRecord(
 
     [JsonIgnore]
     public string PrimaryInputFileName =>
-        InputPaths.Count > 0 ? Path.GetFileName(InputPaths[0]) : "Unknown Input";
+        InputPaths.Count > 1
+            ? $"{Path.GetFileName(InputPaths[0])} (+{InputPaths.Count - 1} files)"
+            : (InputPaths.Count == 1 ? Path.GetFileName(InputPaths[0]) : "Unknown Input");
 
     [JsonIgnore]
     public string? PrimaryOutputPath =>
@@ -44,7 +46,9 @@ public sealed record OperationRecord(
 
     [JsonIgnore]
     public string PrimaryOutputFileName =>
-        PrimaryOutputPath is not null ? Path.GetFileName(PrimaryOutputPath) : "No output";
+        OutputPaths.Count > 1
+            ? $"{Path.GetFileName(PrimaryOutputPath!)} (+{OutputPaths.Count - 1} files)"
+            : (PrimaryOutputPath is not null ? Path.GetFileName(PrimaryOutputPath) : "No output");
 
     [JsonIgnore]
     public bool CanRetry => IsFailed && InputPaths.Count > 0;

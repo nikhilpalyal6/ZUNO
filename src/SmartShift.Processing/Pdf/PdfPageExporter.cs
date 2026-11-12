@@ -12,7 +12,8 @@ namespace SmartShift.Processing.Pdf;
 public enum ExportImageFormat
 {
     Png,
-    Jpeg
+    Jpeg,
+    Webp
 }
 
 public sealed record PdfExportResult(
@@ -22,7 +23,8 @@ public sealed record PdfExportResult(
     long TotalBytesWritten,
     ExportImageFormat Format,
     int Dpi,
-    string SummaryNote);
+    string SummaryNote,
+    PdfConversionQualityReport? QualityReport = null);
 
 public static class PdfPageExporter
 {
@@ -50,6 +52,7 @@ public static class PdfPageExporter
 
         dpi = dpi switch
         {
+            72 => 72,
             100 => 100,
             300 => 300,
             _ => 150
@@ -95,7 +98,12 @@ public static class PdfPageExporter
 
             allocator.EnsureRoot();
             var baseName = Path.GetFileNameWithoutExtension(inputPath);
-            var ext = format == ExportImageFormat.Jpeg ? ".jpg" : ".png";
+            var ext = format switch
+            {
+                ExportImageFormat.Jpeg => ".jpg",
+                ExportImageFormat.Webp => ".webp",
+                _ => ".png"
+            };
             var exportedFiles = new List<string>();
             var tempPartials = new List<string>();
 
@@ -152,6 +160,15 @@ public static class PdfPageExporter
                         }
                         File.WriteAllBytes(tempPartial, data.ToArray());
                     }
+                    else if (format == ExportImageFormat.Webp)
+                    {
+                        using var data = bitmap.Encode(SKEncodedImageFormat.Webp, jpegQuality);
+                        if (data == null || data.Size == 0)
+                        {
+                            throw new InvalidOperationException($"Failed to encode page {pageNum} as WebP.");
+                        }
+                        File.WriteAllBytes(tempPartial, data.ToArray());
+                    }
                     else
                     {
                         using var data = bitmap.Encode(SKEncodedImageFormat.Png, 100);
@@ -178,10 +195,31 @@ public static class PdfPageExporter
                 }
 
                 long totalBytes = exportedFiles.Sum(f => new FileInfo(f).Length);
-                string fmtName = format == ExportImageFormat.Jpeg ? "JPEG" : "PNG";
+                string fmtName = format switch
+                {
+                    ExportImageFormat.Jpeg => "JPEG",
+                    ExportImageFormat.Webp => "WebP",
+                    _ => "PNG"
+                };
                 string summary = $"Exported {exportedFiles.Count} of {totalPages} page(s) as {fmtName} ({dpi} DPI).";
 
                 progress?.Report(new ProcessingProgress(100, "Done."));
+
+                var qualityReport = new PdfConversionQualityReport(
+                    SourcePath: inputPath,
+                    OutputPath: exportedFiles.Count > 0 ? exportedFiles[0] : null,
+                    OutputFiles: exportedFiles,
+                    ConversionMode: $"PageImageExport_{fmtName}",
+                    TotalInputPages: totalPages,
+                    PagesProcessed: exportedFiles.Count,
+                    TotalCharactersExtracted: 0,
+                    ImagesPreservedCount: exportedFiles.Count,
+                    TablesReconstructedCount: 0,
+                    HeadingsDetectedCount: 0,
+                    Status: PdfConversionStatus.Successful,
+                    Warnings: [],
+                    OutputSizeBytes: totalBytes,
+                    SummaryNote: summary);
 
                 return new PdfExportResult(
                     exportedFiles,
@@ -190,7 +228,8 @@ public static class PdfPageExporter
                     totalBytes,
                     format,
                     dpi,
-                    summary);
+                    summary,
+                    qualityReport);
             }
             catch
             {
@@ -233,10 +272,36 @@ public sealed record PdfTextExtractionResult(
     int TotalCharactersExtracted,
     int NonEmptyPagesCount,
     bool IsScannedOrImageOnly,
-    string SummaryNote);
+    string SummaryNote,
+    PdfConversionQualityReport? QualityReport = null);
 
 public static class PdfTextExtractor
 {
+    public static string ExtractAllText(string inputPath)
+    {
+        if (!File.Exists(inputPath)) return string.Empty;
+        try
+        {
+            using var docReader = DocLib.Instance.GetDocReader(inputPath, new PageDimensions(1.0));
+            int totalPages = docReader.GetPageCount();
+            var sb = new StringBuilder();
+            for (int i = 0; i < totalPages; i++)
+            {
+                using var pageReader = docReader.GetPageReader(i);
+                var text = pageReader.GetText();
+                if (!string.IsNullOrWhiteSpace(text))
+                {
+                    sb.AppendLine(text);
+                }
+            }
+            return sb.ToString();
+        }
+        catch
+        {
+            return string.Empty;
+        }
+    }
+
     public static PdfTextExtractionResult ExtractText(
         string inputPath,
         IOutputPathAllocator allocator,
@@ -300,30 +365,83 @@ public static class PdfTextExtractor
                 int nonEmptyPages = 0;
                 int count = pagesToExtract.Count;
 
-                for (int i = 0; i < count; i++)
+                // Try opening with PdfPig for advanced layout and reading order detection
+                UglyToad.PdfPig.PdfDocument? pigDoc = null;
+                try
                 {
-                    cancellationToken.ThrowIfCancellationRequested();
+                    pigDoc = UglyToad.PdfPig.PdfDocument.Open(inputPath);
+                }
+                catch
+                {
+                    // Fall back to DocLib exclusively if PdfPig cannot open
+                }
 
-                    int pageNum = pagesToExtract[i];
-                    int percent = (int)Math.Round(((i + 1) / (double)count) * 100.0);
-                    progress?.Report(new ProcessingProgress(percent, $"Extracting text from page {pageNum} of {totalPages} ({i + 1}/{count})…"));
-
-                    int pageIndex = pageNum - 1;
-                    using var pageReader = docReader.GetPageReader(pageIndex);
-                    string rawText = pageReader.GetText()?.TrimEnd() ?? "";
-
-                    sb.AppendLine($"--- Page {pageNum} ---");
-                    if (!string.IsNullOrWhiteSpace(rawText))
+                using (pigDoc)
+                {
+                    for (int i = 0; i < count; i++)
                     {
-                        sb.AppendLine(rawText);
-                        totalChars += rawText.Length;
-                        nonEmptyPages++;
+                        cancellationToken.ThrowIfCancellationRequested();
+
+                        int pageNum = pagesToExtract[i];
+                        int percent = (int)Math.Round(((i + 1) / (double)count) * 100.0);
+                        progress?.Report(new ProcessingProgress(percent, $"Extracting text from page {pageNum} of {totalPages} ({i + 1}/{count})…"));
+
+                        sb.AppendLine($"--- Page {pageNum} ---");
+                        string? pageText = null;
+
+                        if (pigDoc != null && pageNum <= pigDoc.NumberOfPages)
+                        {
+                            try
+                            {
+                                var pigPage = pigDoc.GetPage(pageNum);
+                                var words = pigPage.GetWords().ToList();
+                                if (words.Count > 0)
+                                {
+                                    var blocks = UglyToad.PdfPig.DocumentLayoutAnalysis.PageSegmenter.DocstrumBoundingBoxes.Instance.GetBlocks(words);
+                                    if (blocks != null && blocks.Count > 0)
+                                    {
+                                        var orderedBlocks = UglyToad.PdfPig.DocumentLayoutAnalysis.ReadingOrderDetector.DefaultReadingOrderDetector.Instance.Get(blocks);
+                                        var blockStrings = new List<string>();
+                                        foreach (var b in orderedBlocks)
+                                        {
+                                            if (!string.IsNullOrWhiteSpace(b.Text))
+                                            {
+                                                blockStrings.Add(b.Text.TrimEnd());
+                                            }
+                                        }
+                                        if (blockStrings.Count > 0)
+                                        {
+                                            pageText = string.Join(Environment.NewLine + Environment.NewLine, blockStrings);
+                                        }
+                                    }
+                                }
+                            }
+                            catch
+                            {
+                                // Non-fatal layout error, fall back to DocLib text
+                            }
+                        }
+
+                        // Fallback to DocLib reader if PdfPig yielded nothing
+                        if (string.IsNullOrWhiteSpace(pageText))
+                        {
+                            int pageIndex = pageNum - 1;
+                            using var pageReader = docReader.GetPageReader(pageIndex);
+                            pageText = pageReader.GetText()?.TrimEnd() ?? "";
+                        }
+
+                        if (!string.IsNullOrWhiteSpace(pageText))
+                        {
+                            sb.AppendLine(pageText);
+                            totalChars += pageText.Length;
+                            nonEmptyPages++;
+                        }
+                        else
+                        {
+                            sb.AppendLine("[No extractable text on this page]");
+                        }
+                        sb.AppendLine();
                     }
-                    else
-                    {
-                        sb.AppendLine("[No extractable text on this page]");
-                    }
-                    sb.AppendLine();
                 }
 
                 bool isScanned = (totalChars == 0);
@@ -337,11 +455,37 @@ public static class PdfTextExtractor
 
                 File.Move(tempPartial, finalPath, overwrite: false);
 
+                var warnings = new List<string>();
+                var status = PdfConversionStatus.Successful;
+
+                if (isScanned)
+                {
+                    status = PdfConversionStatus.SuccessfulWithLimitations;
+                    warnings.Add("Document appears to be scanned or image-only without an extractable text layer. An OCR engine is required to recognize rasterized text.");
+                }
+
+                long outputBytes = new FileInfo(finalPath).Length;
                 string summary = isScanned
-                    ? $"Extracted 0 characters across {count} page(s). Document appears to be scanned or image-only without an extractable text layer."
+                    ? $"Extracted 0 characters across {count} page(s). Document appears to be scanned or image-only without an extractable text layer (OCR required)."
                     : $"Extracted {totalChars:N0} characters across {nonEmptyPages} page(s) ({count} page(s) scanned).";
 
                 progress?.Report(new ProcessingProgress(100, "Done."));
+
+                var qualityReport = new PdfConversionQualityReport(
+                    SourcePath: inputPath,
+                    OutputPath: finalPath,
+                    OutputFiles: [finalPath],
+                    ConversionMode: "TextExtraction_StructuralOrder",
+                    TotalInputPages: totalPages,
+                    PagesProcessed: count,
+                    TotalCharactersExtracted: totalChars,
+                    ImagesPreservedCount: 0,
+                    TablesReconstructedCount: 0,
+                    HeadingsDetectedCount: 0,
+                    Status: status,
+                    Warnings: warnings,
+                    OutputSizeBytes: outputBytes,
+                    SummaryNote: summary);
 
                 return new PdfTextExtractionResult(
                     finalPath,
@@ -350,7 +494,8 @@ public static class PdfTextExtractor
                     totalChars,
                     nonEmptyPages,
                     isScanned,
-                    summary);
+                    summary,
+                    qualityReport);
             }
             catch
             {

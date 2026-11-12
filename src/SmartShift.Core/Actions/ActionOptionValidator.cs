@@ -53,12 +53,101 @@ public static class ActionOptionValidator
             ValidatePdfPptx(values, errors);
         }
 
+        if (actionId is ActionIds.ExportPptxImages)
+        {
+            ValidatePdfExport(values, errors);
+        }
+
+        if (actionId is ActionIds.ExtractPptxText or ActionIds.ConvertPptxToPdf)
+        {
+            ValidatePdfText(values, errors);
+        }
+
+        if (actionId is ActionIds.WatermarkPdf or ActionIds.AddDocxWatermark)
+        {
+            ValidateWatermark(values, errors);
+        }
+
+        if (actionId == ActionIds.AddDocxPageNumbers)
+        {
+            ValidateDocxPageNumbers(values, errors);
+        }
+
         if (actionId == ActionIds.UnifiedConvert)
         {
             ValidateUnifiedConvert(values, errors);
         }
 
         return errors;
+    }
+
+    private static void ValidateWatermark(IReadOnlyDictionary<string, string> values, List<string> errors)
+    {
+        if (values.TryGetValue("text", out var text))
+        {
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                errors.Add("Watermark text cannot be empty.");
+            }
+        }
+        else if (values.TryGetValue("watermarkText", out var wmText))
+        {
+            if (string.IsNullOrWhiteSpace(wmText))
+            {
+                errors.Add("Watermark text cannot be empty.");
+            }
+        }
+
+        if (values.TryGetValue("opacity", out var opacityStr))
+        {
+            if (double.TryParse(opacityStr, NumberStyles.Float, CultureInfo.InvariantCulture, out var opacity))
+            {
+                if (opacity <= 0.0 || opacity > 1.0)
+                {
+                    errors.Add("Watermark opacity must be between 0.01 and 1.0.");
+                }
+            }
+            else
+            {
+                errors.Add("Watermark opacity must be a valid decimal number.");
+            }
+        }
+
+        if (values.TryGetValue("fontSize", out var fontSizeStr))
+        {
+            if (double.TryParse(fontSizeStr, NumberStyles.Float, CultureInfo.InvariantCulture, out var fontSize))
+            {
+                if (fontSize < 6 || fontSize > 300)
+                {
+                    errors.Add("Watermark font size must be between 6 and 300 pt.");
+                }
+            }
+            else
+            {
+                errors.Add("Watermark font size must be a valid number.");
+            }
+        }
+    }
+
+    private static void ValidateDocxPageNumbers(IReadOnlyDictionary<string, string> values, List<string> errors)
+    {
+        if (values.TryGetValue("position", out var pos) && !string.IsNullOrWhiteSpace(pos))
+        {
+            var p = pos.Trim().ToLowerInvariant();
+            if (p is not ("footer" or "header"))
+            {
+                errors.Add("Page number position must be either 'footer' or 'header'.");
+            }
+        }
+
+        if (values.TryGetValue("alignment", out var align) && !string.IsNullOrWhiteSpace(align))
+        {
+            var a = align.Trim().ToLowerInvariant();
+            if (a is not ("left" or "center" or "right"))
+            {
+                errors.Add("Page number alignment must be 'left', 'center', or 'right'.");
+            }
+        }
     }
 
     private static void ValidateUnifiedConvert(IReadOnlyDictionary<string, string> values, List<string> errors)
@@ -85,7 +174,7 @@ public static class ActionOptionValidator
         {
             ValidatePdfPptx(values, errors);
         }
-        else if (target is "txt" or "text")
+        else if (target is "txt" or "text" or "html")
         {
             ValidatePdfText(values, errors);
         }
@@ -134,17 +223,17 @@ public static class ActionOptionValidator
         if (values.TryGetValue("format", out var rawFmt) && !string.IsNullOrWhiteSpace(rawFmt))
         {
             var fmt = rawFmt.Trim().ToLowerInvariant();
-            if (fmt is not ("png" or "jpeg" or "jpg"))
+            if (fmt is not ("png" or "jpeg" or "jpg" or "webp"))
             {
-                errors.Add("format must be 'png' or 'jpeg'.");
+                errors.Add("format must be 'png', 'jpeg', or 'webp'.");
             }
         }
 
         if (values.TryGetValue("dpi", out var rawDpi) && !string.IsNullOrWhiteSpace(rawDpi))
         {
-            if (!int.TryParse(rawDpi, NumberStyles.Integer, CultureInfo.InvariantCulture, out int dpi) || (dpi != 100 && dpi != 150 && dpi != 300))
+            if (!int.TryParse(rawDpi, NumberStyles.Integer, CultureInfo.InvariantCulture, out int dpi) || (dpi != 72 && dpi != 100 && dpi != 150 && dpi != 300))
             {
-                errors.Add("dpi must be 100, 150, or 300.");
+                errors.Add("dpi must be 72, 100, 150, or 300.");
             }
         }
 

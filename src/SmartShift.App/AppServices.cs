@@ -9,10 +9,13 @@ using SmartShift.Processing;
 using SmartShift.Processing.Batch;
 using SmartShift.Processing.Conversion;
 using SmartShift.Processing.Documents;
+using SmartShift.Processing.Documents.Editing;
 using SmartShift.Processing.History;
 using SmartShift.Processing.Images;
 using SmartShift.Processing.Pdf;
+using SmartShift.Processing.Pdf.Editing;
 using SmartShift.Processing.PresentationStudio.Service;
+using SmartShift.Processing.Quality;
 using SmartShift.Processing.Workflows;
 
 namespace SmartShift.App;
@@ -27,10 +30,19 @@ public sealed class AppServices : IDisposable
         Queue = new FileQueue();
         Recommendations = new RecommendationEngine(new UniversalActionCapabilities());
         Outputs = new OutputPathAllocator();
+        PdfConversion = new PdfConversionEngine(Outputs);
+        OfficeConversion = new OfficeConversionEngine(Outputs);
         Processors = new ProcessorCatalog(Classifier, Outputs);
         PdfMerge = new PdfMergeEngine(Outputs);
         PdfSplit = new PdfSplitEngine(Outputs);
         PdfOrganize = new PdfPageOrganizerEngine(Outputs);
+        PdfWatermark = new PdfWatermarkService(Outputs);
+        PdfMetadata = new PdfMetadataService(Outputs);
+        DocxMerge = new DocxMergeService(Outputs);
+        DocxPageNumber = new DocxPageNumberService(Outputs);
+        DocxWatermark = new DocxWatermarkService(Outputs);
+        DocxMetadata = new DocxMetadataService(Outputs);
+        QualityAnalyzer = new ConversionQualityAnalyzer();
         UnifiedConversion = new UnifiedConversionService(Capabilities, Processors, Outputs, Classifier);
         Processors.Register(ActionIds.UnifiedConvert, new UnifiedConvertProcessor(UnifiedConversion));
         BatchEngine = new BatchImageProcessingEngine(Processors, Outputs, Classifier);
@@ -53,6 +65,15 @@ public sealed class AppServices : IDisposable
     public IPdfMergeService PdfMerge { get; }
     public IPdfSplitService PdfSplit { get; }
     public IPdfPageOrganizerService PdfOrganize { get; }
+    public IPdfWatermarkService PdfWatermark { get; }
+    public IPdfMetadataService PdfMetadata { get; }
+    public IDocxMergeService DocxMerge { get; }
+    public IDocxPageNumberService DocxPageNumber { get; }
+    public IDocxWatermarkService DocxWatermark { get; }
+    public IDocxMetadataService DocxMetadata { get; }
+    public IConversionQualityAnalyzer QualityAnalyzer { get; }
+    public IPdfConversionEngine PdfConversion { get; }
+    public IOfficeConversionEngine OfficeConversion { get; }
     public IUnifiedConversionService UnifiedConversion { get; }
     public IBatchImageProcessingEngine BatchEngine { get; }
     public IMultiImageDocumentBuilder DocumentBuilder { get; }

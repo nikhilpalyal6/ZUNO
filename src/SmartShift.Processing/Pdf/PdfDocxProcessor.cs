@@ -101,6 +101,7 @@ public sealed class PdfDocxProcessor : IFileProcessor
 
         long outputBytes = new FileInfo(result.OutputPath).Length;
 
+        var qr = result.QualityReport;
         var details = new Dictionary<string, string>
         {
             ["actionId"] = ActionIds.ConvertPdfToDocx,
@@ -114,6 +115,11 @@ public sealed class PdfDocxProcessor : IFileProcessor
             ["totalPages"] = result.TotalPagesInDoc.ToString(),
             ["pagesConverted"] = result.PagesConvertedCount.ToString(),
             ["isScanned"] = result.IsScannedOrImageOnly ? "true" : "false",
+            ["tablesReconstructed"] = (qr?.TablesReconstructedCount ?? 0).ToString(),
+            ["headingsDetected"] = (qr?.HeadingsDetectedCount ?? 0).ToString(),
+            ["imagesPreserved"] = (qr?.ImagesPreservedCount ?? 0).ToString(),
+            ["qualityStatus"] = (qr?.Status ?? (result.IsScannedOrImageOnly ? PdfConversionStatus.SuccessfulWithLimitations : PdfConversionStatus.Successful)).ToString(),
+            ["warnings"] = string.Join("; ", qr?.Warnings ?? []),
             ["summaryNote"] = result.SummaryNote,
             ["originalUnchanged"] = "true"
         };

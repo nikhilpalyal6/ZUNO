@@ -71,21 +71,33 @@ public sealed class UnifiedConversionServiceTests : IDisposable
 
         // PDF
         var pdfTargets = _service.GetSupportedTargets(DetectedFormat.Pdf);
-        Assert.Equal(5, pdfTargets.Count);
+        Assert.Equal(6, pdfTargets.Count);
         Assert.Contains(DetectedFormat.Docx, pdfTargets);
         Assert.Contains(DetectedFormat.Pptx, pdfTargets);
         Assert.Contains(DetectedFormat.Txt, pdfTargets);
         Assert.Contains(DetectedFormat.Png, pdfTargets);
         Assert.Contains(DetectedFormat.Jpeg, pdfTargets);
+        Assert.Contains(DetectedFormat.Webp, pdfTargets);
         Assert.DoesNotContain(DetectedFormat.Pdf, pdfTargets);
 
-        // DOCX supports PDF and PPTX targets
+        // DOCX supports PDF, PPTX, TXT, and HTML targets
         var docxTargets = _service.GetSupportedTargets(DetectedFormat.Docx);
+        Assert.Equal(4, docxTargets.Count);
         Assert.Contains(DetectedFormat.Pdf, docxTargets);
         Assert.Contains(DetectedFormat.Pptx, docxTargets);
+        Assert.Contains(DetectedFormat.Txt, docxTargets);
+        Assert.Contains(DetectedFormat.Html, docxTargets);
+
+        // PPTX supports PDF, PNG, JPEG, WebP, and TXT targets
+        var pptxTargets = _service.GetSupportedTargets(DetectedFormat.Pptx);
+        Assert.Equal(5, pptxTargets.Count);
+        Assert.Contains(DetectedFormat.Pdf, pptxTargets);
+        Assert.Contains(DetectedFormat.Png, pptxTargets);
+        Assert.Contains(DetectedFormat.Jpeg, pptxTargets);
+        Assert.Contains(DetectedFormat.Webp, pptxTargets);
+        Assert.Contains(DetectedFormat.Txt, pptxTargets);
 
         // Unsupported or import-only formats must return empty target lists
-        Assert.Empty(_service.GetSupportedTargets(DetectedFormat.Pptx));
         Assert.Empty(_service.GetSupportedTargets(DetectedFormat.Xlsx));
         Assert.Empty(_service.GetSupportedTargets(DetectedFormat.Txt));
         Assert.Empty(_service.GetSupportedTargets(DetectedFormat.Markdown));
@@ -110,15 +122,23 @@ public sealed class UnifiedConversionServiceTests : IDisposable
         Assert.False(_service.CanConvert(DetectedFormat.Txt, DetectedFormat.Docx));
         Assert.False(_service.CanConvert(DetectedFormat.Markdown, DetectedFormat.Pdf));
         Assert.False(_service.CanConvert(DetectedFormat.Png, DetectedFormat.Docx));
-        Assert.False(_service.CanConvert(DetectedFormat.Pdf, DetectedFormat.Webp));
+        Assert.False(_service.CanConvert(DetectedFormat.Pdf, DetectedFormat.Xlsx));
 
         // Valid combinations
         Assert.True(_service.CanConvert(DetectedFormat.Png, DetectedFormat.Webp));
         Assert.True(_service.CanConvert(DetectedFormat.Jpeg, DetectedFormat.Png));
         Assert.True(_service.CanConvert(DetectedFormat.Pdf, DetectedFormat.Docx));
         Assert.True(_service.CanConvert(DetectedFormat.Pdf, DetectedFormat.Pptx));
+        Assert.True(_service.CanConvert(DetectedFormat.Pdf, DetectedFormat.Webp));
         Assert.True(_service.CanConvert(DetectedFormat.Docx, DetectedFormat.Pdf));
         Assert.True(_service.CanConvert(DetectedFormat.Docx, DetectedFormat.Pptx));
+        Assert.True(_service.CanConvert(DetectedFormat.Docx, DetectedFormat.Txt));
+        Assert.True(_service.CanConvert(DetectedFormat.Docx, DetectedFormat.Html));
+        Assert.True(_service.CanConvert(DetectedFormat.Pptx, DetectedFormat.Pdf));
+        Assert.True(_service.CanConvert(DetectedFormat.Pptx, DetectedFormat.Png));
+        Assert.True(_service.CanConvert(DetectedFormat.Pptx, DetectedFormat.Jpeg));
+        Assert.True(_service.CanConvert(DetectedFormat.Pptx, DetectedFormat.Webp));
+        Assert.True(_service.CanConvert(DetectedFormat.Pptx, DetectedFormat.Txt));
     }
 
     [Fact]

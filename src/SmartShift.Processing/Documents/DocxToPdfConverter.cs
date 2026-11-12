@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.IO;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Wordprocessing;
@@ -28,6 +29,16 @@ public static class DocxToPdfConverter
         IProgress<ProcessingProgress>? progress = null,
         CancellationToken cancellationToken = default)
     {
+        return ConvertWithReport(sourceDocxPath, outputPath, options, progress, cancellationToken).OutputPath;
+    }
+
+    public static OfficeConversionResult ConvertWithReport(
+        string sourceDocxPath,
+        string outputPath,
+        DocxPdfConversionOptions? options = null,
+        IProgress<ProcessingProgress>? progress = null,
+        CancellationToken cancellationToken = default)
+    {
         cancellationToken.ThrowIfCancellationRequested();
 
         if (string.IsNullOrWhiteSpace(sourceDocxPath) || !File.Exists(sourceDocxPath))
@@ -41,6 +52,7 @@ public static class DocxToPdfConverter
             throw new InvalidOperationException("Source Word document is empty (0 bytes).");
         }
 
+        var sw = Stopwatch.StartNew();
         options ??= new DocxPdfConversionOptions();
 
         var dir = Path.GetDirectoryName(outputPath);
@@ -55,6 +67,14 @@ public static class DocxToPdfConverter
             try { File.Delete(tempPartial); } catch { }
         }
 
+        int pagesPreserved = 0;
+        int headingsDetected = 0;
+        int tablesReconstructed = 0;
+        int imagesPreserved = 0;
+        long totalChars = 0;
+        var limitations = new List<string>();
+        var warnings = new List<string>();
+
         // 1. If PreferLocalWordEngine is requested, try Word COM if available
         if (options.PreferLocalWordEngine)
         {
@@ -63,7 +83,22 @@ public static class DocxToPdfConverter
                 if (TryConvertWithWordCom(sourceDocxPath, tempPartial, progress, cancellationToken))
                 {
                     FinalizeAndValidate(tempPartial, outputPath, progress);
-                    return outputPath;
+                    sw.Stop();
+                    var comReport = new OfficeConversionQualityReport(
+                        Status: OfficeConversionStatus.Successful,
+                        ConversionMode: "NativeWordComEngine",
+                        PagesOrSlidesCount: 1,
+                        HeadingsDetectedCount: 0,
+                        TablesReconstructedCount: 0,
+                        ImagesPreservedCount: 0,
+                        ShapesPreservedCount: 0,
+                        CharacterCount: sourceInfo.Length,
+                        Limitations: limitations,
+                        Warnings: warnings,
+                        ValidationPassed: true,
+                        Duration: sw.Elapsed);
+
+                    return new OfficeConversionResult(outputPath, comReport, "Converted via Microsoft Word native engine.");
                 }
             }
             catch (Exception)
@@ -73,10 +108,31 @@ public static class DocxToPdfConverter
         }
 
         // 2. Built-in OpenXML -> PDF renderer
-        ConvertWithBuiltinEngine(sourceDocxPath, tempPartial, options, progress, cancellationToken);
-        FinalizeAndValidate(tempPartial, outputPath, progress);
+        ConvertWithBuiltinEngine(sourceDocxPath, tempPartial, options, progress, cancellationToken,
+            ref pagesPreserved, ref headingsDetected, ref tablesReconstructed, ref imagesPreserved, ref totalChars, limitations, warnings);
 
-        return outputPath;
+        FinalizeAndValidate(tempPartial, outputPath, progress);
+        sw.Stop();
+
+        var status = limitations.Count > 0 ? OfficeConversionStatus.SuccessfulWithLimitations : OfficeConversionStatus.Successful;
+        var report = new OfficeConversionQualityReport(
+            Status: status,
+            ConversionMode: "DocxToPdfConversion",
+            PagesOrSlidesCount: pagesPreserved,
+            HeadingsDetectedCount: headingsDetected,
+            TablesReconstructedCount: tablesReconstructed,
+            ImagesPreservedCount: imagesPreserved,
+            ShapesPreservedCount: 0,
+            CharacterCount: totalChars,
+            Limitations: limitations,
+            Warnings: warnings,
+            ValidationPassed: true,
+            Duration: sw.Elapsed);
+
+        return new OfficeConversionResult(
+            outputPath,
+            report,
+            $"Converted Word document to PDF ({pagesPreserved} page(s), {headingsDetected} heading(s), {tablesReconstructed} table(s)).");
     }
 
     private static void FinalizeAndValidate(string tempPartial, string outputPath, IProgress<ProcessingProgress>? progress)
@@ -158,7 +214,14 @@ public static class DocxToPdfConverter
         string tempPartial,
         DocxPdfConversionOptions options,
         IProgress<ProcessingProgress>? progress,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        ref int pagesPreserved,
+        ref int headingsDetected,
+        ref int tablesReconstructed,
+        ref int imagesPreserved,
+        ref long totalChars,
+        List<string> limitations,
+        List<string> warnings)
     {
         cancellationToken.ThrowIfCancellationRequested();
         progress?.Report(new ProcessingProgress(15, "Reading Word document structure…"));
@@ -172,16 +235,79 @@ public static class DocxToPdfConverter
 
         var mainPart = wordDoc.MainDocumentPart!;
 
+        // Check unsupported elements
+        if (body.Descendants().Any(e => e.LocalName == "oMath"))
+        {
+            limitations.Add("Mathematical equations (oMath) rendered as plain text or skipped.");
+        }
+        if (body.Descendants().Any(e => e.LocalName == "chart"))
+        {
+            limitations.Add("Embedded Office charts skipped or rendered as outline placeholders.");
+        }
+
+        // Section Properties inspection
+        var sectPr = body.Elements<SectionProperties>().FirstOrDefault() ?? body.Descendants<SectionProperties>().FirstOrDefault();
+        double pageWidth = 595.0; // A4 pt
+        double pageHeight = 842.0;
+        double marginLeft = options.MarginPoints;
+        double marginRight = options.MarginPoints;
+        double marginTop = options.MarginPoints;
+        double marginBottom = options.MarginPoints;
+
+        if (sectPr != null)
+        {
+            var pgSz = sectPr.GetFirstChild<PageSize>();
+            if (pgSz?.Width?.Value != null && pgSz.Height?.Value != null)
+            {
+                double w = pgSz.Width.Value / 20.0;
+                double h = pgSz.Height.Value / 20.0;
+                if (pgSz.Orient?.Value == PageOrientationValues.Landscape)
+                {
+                    pageWidth = Math.Max(w, h);
+                    pageHeight = Math.Min(w, h);
+                }
+                else
+                {
+                    pageWidth = Math.Min(w, h);
+                    pageHeight = Math.Max(w, h);
+                }
+            }
+
+            var pgMar = sectPr.GetFirstChild<PageMargin>();
+            if (pgMar != null)
+            {
+                if (pgMar.Left?.Value != null) marginLeft = pgMar.Left.Value / 20.0;
+                if (pgMar.Right?.Value != null) marginRight = pgMar.Right.Value / 20.0;
+                if (pgMar.Top?.Value != null) marginTop = pgMar.Top.Value / 20.0;
+                if (pgMar.Bottom?.Value != null) marginBottom = pgMar.Bottom.Value / 20.0;
+            }
+        }
+
+        // Extract header and footer text if available
+        string? headerText = null;
+        string? footerText = null;
+        if (sectPr != null)
+        {
+            var headerRef = sectPr.Elements<HeaderReference>().FirstOrDefault();
+            if (headerRef?.Id?.Value != null && mainPart.TryGetPartById(headerRef.Id.Value, out var hPart) && hPart is HeaderPart headerPart)
+            {
+                headerText = headerPart.Header?.InnerText?.Trim();
+            }
+
+            var footerRef = sectPr.Elements<FooterReference>().FirstOrDefault();
+            if (footerRef?.Id?.Value != null && mainPart.TryGetPartById(footerRef.Id.Value, out var fPart) && fPart is FooterPart footerPart)
+            {
+                footerText = footerPart.Footer?.InnerText?.Trim();
+            }
+        }
+
         using var pdf = new PdfDocument();
         pdf.Info.Title = Path.GetFileNameWithoutExtension(sourceDocxPath);
         pdf.Info.Creator = "SmartShift Document Engine (OpenXML to PDF)";
         pdf.Options.CompressContentStreams = true;
 
-        double pageWidth = 595.0; // A4 pt
-        double pageHeight = 842.0;
-        double margin = options.MarginPoints;
-        double printableWidth = pageWidth - (2 * margin);
-        double printableHeight = pageHeight - (2 * margin);
+        double printableWidth = pageWidth - (marginLeft + marginRight);
+        double printableHeight = pageHeight - (marginTop + marginBottom);
 
         var fontTitle = new XFont("Arial", 20, XFontStyleEx.Bold);
         var fontH1 = new XFont("Arial", 16, XFontStyleEx.Bold);
@@ -221,18 +347,23 @@ public static class DocxToPdfConverter
             return gfxList[^1];
         }
 
-        double cursorY = margin;
+        double cursorY = marginTop;
+
+        void AdvanceNewPage()
+        {
+            var newPage = pdf.AddPage();
+            newPage.Width = XUnit.FromPoint(pageWidth);
+            newPage.Height = XUnit.FromPoint(pageHeight);
+            pages.Add(newPage);
+            gfxList.Add(XGraphics.FromPdfPage(newPage));
+            cursorY = marginTop;
+        }
 
         void CheckNewPage(double neededHeight)
         {
-            if (cursorY + neededHeight > pageHeight - margin - 20)
+            if (cursorY + neededHeight > pageHeight - marginBottom - 20)
             {
-                var newPage = pdf.AddPage();
-                newPage.Width = XUnit.FromPoint(pageWidth);
-                newPage.Height = XUnit.FromPoint(pageHeight);
-                pages.Add(newPage);
-                gfxList.Add(XGraphics.FromPdfPage(newPage));
-                cursorY = margin;
+                AdvanceNewPage();
             }
         }
 
@@ -252,6 +383,15 @@ public static class DocxToPdfConverter
 
             if (element is Paragraph para)
             {
+                // Check explicit page break
+                bool isPageBreak = para.Descendants<Break>().Any(b => b.Type?.Value == BreakValues.Page) ||
+                                   para.Descendants<LastRenderedPageBreak>().Any();
+
+                if (isPageBreak && pages.Count > 0)
+                {
+                    AdvanceNewPage();
+                }
+
                 // Check if paragraph contains drawings / images
                 var blips = para.Descendants<A.Blip>().ToList();
                 if (blips.Count > 0)
@@ -283,13 +423,14 @@ public static class DocxToPdfConverter
 
                                 CheckNewPage(drawHeight + 16);
                                 var gfx = CurrentGfx();
-                                double imgX = margin + ((printableWidth - drawWidth) / 2.0);
+                                double imgX = marginLeft + ((printableWidth - drawWidth) / 2.0);
                                 gfx.DrawImage(xImg, imgX, cursorY, drawWidth, drawHeight);
                                 cursorY += drawHeight + 14;
+                                imagesPreserved++;
                             }
                             catch
                             {
-                                // If image decoding fails, skip image safely
+                                warnings.Add("An embedded image could not be decoded or rendered.");
                             }
                         }
                     }
@@ -298,10 +439,11 @@ public static class DocxToPdfConverter
                 var text = para.InnerText?.Trim();
                 if (string.IsNullOrWhiteSpace(text))
                 {
-                    // Small paragraph spacing
                     cursorY += 6;
                     continue;
                 }
+
+                totalChars += text.Length;
 
                 var styleId = para.ParagraphProperties?.ParagraphStyleId?.Val?.Value;
                 var (isHeading, level) = DetermineHeading(styleId);
@@ -316,6 +458,7 @@ public static class DocxToPdfConverter
 
                 if (isHeading)
                 {
+                    headingsDetected++;
                     if (level == 1)
                     {
                         currentFont = fontTitle;
@@ -369,7 +512,6 @@ public static class DocxToPdfConverter
 
                 cursorY += spaceBefore;
 
-                // Word wrap lines
                 var lines = WrapText(CurrentGfx(), text, currentFont, printableWidth - leftIndent);
                 double blockHeight = lines.Count * lineHeight;
                 CheckNewPage(blockHeight);
@@ -378,14 +520,14 @@ public static class DocxToPdfConverter
 
                 if (isBullet)
                 {
-                    activeGfx.DrawString("•", currentFont, currentBrush, margin + 4, cursorY + (lineHeight * 0.75));
+                    activeGfx.DrawString("•", currentFont, currentBrush, marginLeft + 4, cursorY + (lineHeight * 0.75));
                 }
 
                 for (int l = 0; l < lines.Count; l++)
                 {
                     CheckNewPage(lineHeight);
                     activeGfx = CurrentGfx();
-                    activeGfx.DrawString(lines[l], currentFont, currentBrush, margin + leftIndent, cursorY + (lineHeight * 0.75));
+                    activeGfx.DrawString(lines[l], currentFont, currentBrush, marginLeft + leftIndent, cursorY + (lineHeight * 0.75));
                     cursorY += lineHeight;
                 }
 
@@ -396,10 +538,10 @@ public static class DocxToPdfConverter
                 var rows = table.Elements<TableRow>().ToList();
                 if (rows.Count == 0) continue;
 
-                // Calculate column count
                 int colCount = rows.Max(r => r.Elements<TableCell>().Count());
                 if (colCount == 0) continue;
 
+                tablesReconstructed++;
                 double colWidth = printableWidth / colCount;
                 cursorY += 8;
 
@@ -410,7 +552,6 @@ public static class DocxToPdfConverter
                     var cells = row.Elements<TableCell>().ToList();
                     double rowHeight = 22;
 
-                    // Measure text height in cells
                     foreach (var cell in cells)
                     {
                         var cellText = cell.InnerText?.Trim() ?? "";
@@ -424,7 +565,7 @@ public static class DocxToPdfConverter
 
                     for (int c = 0; c < colCount; c++)
                     {
-                        double cellX = margin + (c * colWidth);
+                        double cellX = marginLeft + (c * colWidth);
                         var cellRect = new XRect(cellX, cursorY, colWidth, rowHeight);
 
                         if (isFirstRow)
@@ -436,6 +577,7 @@ public static class DocxToPdfConverter
                         if (c < cells.Count)
                         {
                             var cellText = cells[c].InnerText?.Trim() ?? "";
+                            totalChars += cellText.Length;
                             var cellFont = isFirstRow ? fontBodyBold : fontBody;
                             var cellLines = WrapText(gfx, cellText, cellFont, colWidth - 10);
 
@@ -456,31 +598,49 @@ public static class DocxToPdfConverter
             }
         }
 
-        // Draw page numbers and footers across all pages
-        if (options.IncludePageNumbers && pages.Count > 0)
+        // Draw headers, footers, and page numbers across all pages
+        if (pages.Count > 0)
         {
             for (int p = 0; p < pages.Count; p++)
             {
                 var gfx = gfxList[p];
-                string footerText = $"Page {p + 1} of {pages.Count}";
-                gfx.DrawLine(penBorder, margin, pageHeight - margin + 8, pageWidth - margin, pageHeight - margin + 8);
-                gfx.DrawString(footerText, fontCaption, brushSubtext,
-                    new XRect(margin, pageHeight - margin + 12, printableWidth, 14),
-                    XStringFormats.Center);
+
+                // Header
+                if (!string.IsNullOrWhiteSpace(headerText))
+                {
+                    gfx.DrawString(headerText, fontCaption, brushSubtext,
+                        new XRect(marginLeft, marginTop - 18, printableWidth, 12),
+                        XStringFormats.TopLeft);
+                    gfx.DrawLine(penBorder, marginLeft, marginTop - 4, pageWidth - marginRight, marginTop - 4);
+                }
+
+                // Footer
+                if (options.IncludePageNumbers || !string.IsNullOrWhiteSpace(footerText))
+                {
+                    gfx.DrawLine(penBorder, marginLeft, pageHeight - marginBottom + 8, pageWidth - marginRight, pageHeight - marginBottom + 8);
+                    string displayFooter = !string.IsNullOrWhiteSpace(footerText)
+                        ? $"{footerText} — Page {p + 1} of {pages.Count}"
+                        : $"Page {p + 1} of {pages.Count}";
+
+                    gfx.DrawString(displayFooter, fontCaption, brushSubtext,
+                        new XRect(marginLeft, pageHeight - marginBottom + 12, printableWidth, 14),
+                        XStringFormats.Center);
+                }
             }
         }
 
-        // Ensure at least one page is added if doc was empty of body elements
         if (pages.Count == 0)
         {
             var p = pdf.AddPage();
             p.Width = XUnit.FromPoint(pageWidth);
             p.Height = XUnit.FromPoint(pageHeight);
             using var gfx = XGraphics.FromPdfPage(p);
-            gfx.DrawString("(Empty Document)", fontBody, brushSubtext, margin, margin + 20);
+            gfx.DrawString("(Empty Document)", fontBody, brushSubtext, marginLeft, marginTop + 20);
+            pages.Add(p);
         }
 
-        // Dispose gfx handles before saving
+        pagesPreserved = pages.Count;
+
         foreach (var gfx in gfxList)
         {
             gfx.Dispose();
@@ -500,7 +660,7 @@ public static class DocxToPdfConverter
         {
             for (int i = 1; i <= 6; i++)
             {
-                if (norm.Contains(i.ToString())) return (true, i + 1);
+                if (norm.Contains(i.ToString())) return (true, i);
             }
             return (true, 2);
         }

@@ -67,10 +67,17 @@ public sealed class PdfExportProcessor : IFileProcessor
         }
 
         var format = ExportImageFormat.Png;
-        if (request.Options.Values.TryGetValue("format", out var rawFmt) &&
-            string.Equals(rawFmt.Trim(), "jpeg", StringComparison.OrdinalIgnoreCase))
+        if (request.Options.Values.TryGetValue("format", out var rawFmt))
         {
-            format = ExportImageFormat.Jpeg;
+            var trimmed = rawFmt.Trim();
+            if (string.Equals(trimmed, "jpeg", StringComparison.OrdinalIgnoreCase) || string.Equals(trimmed, "jpg", StringComparison.OrdinalIgnoreCase))
+            {
+                format = ExportImageFormat.Jpeg;
+            }
+            else if (string.Equals(trimmed, "webp", StringComparison.OrdinalIgnoreCase))
+            {
+                format = ExportImageFormat.Webp;
+            }
         }
 
         int dpi = 150;
@@ -127,8 +134,14 @@ public sealed class PdfExportProcessor : IFileProcessor
         }
 
         var firstOutput = result.ExportedFiles.Count > 0 ? result.ExportedFiles[0] : null;
-        var fmtName = format == ExportImageFormat.Jpeg ? "JPEG" : "PNG";
+        var fmtName = format switch
+        {
+            ExportImageFormat.Jpeg => "JPEG",
+            ExportImageFormat.Webp => "WebP",
+            _ => "PNG"
+        };
 
+        var qr = result.QualityReport;
         var details = new Dictionary<string, string>
         {
             ["actionId"] = ActionIds.ExportPdfPages,
@@ -140,6 +153,10 @@ public sealed class PdfExportProcessor : IFileProcessor
             ["dpi"] = dpi.ToString(),
             ["exportedPages"] = result.ExportedCount.ToString(),
             ["totalPages"] = result.TotalPagesInDoc.ToString(),
+            ["imagesPreserved"] = result.ExportedCount.ToString(),
+            ["outputPaths"] = string.Join(";", result.ExportedFiles),
+            ["qualityStatus"] = (qr?.Status ?? PdfConversionStatus.Successful).ToString(),
+            ["warnings"] = string.Join("; ", qr?.Warnings ?? []),
             ["summaryNote"] = result.SummaryNote,
             ["originalUnchanged"] = "true"
         };

@@ -26,7 +26,8 @@ public sealed record PdfPptxResult(
     int TotalPagesInDoc,
     int SlidesCreatedCount,
     PptxSlideMode SlideMode,
-    string SummaryNote);
+    string SummaryNote,
+    PdfConversionQualityReport? QualityReport = null);
 
 public static class PdfToPptxConverter
 {
@@ -101,6 +102,11 @@ public static class PdfToPptxConverter
             catch { }
 
             int slidesCreated = 0;
+            int totalChars = 0;
+            int imagesPreserved = 0;
+            int titlesDetected = 0;
+            var warnings = new List<string>();
+            var status = PdfConversionStatus.Successful;
 
             using (var presentationDoc = PresentationDocument.Create(tempPartial, PresentationDocumentType.Presentation))
             {
@@ -186,12 +192,13 @@ public static class PdfToPptxConverter
                         });
 
                         slidesCreated++;
+                        imagesPreserved++;
                     }
                 }
                 else
                 {
-                    // MODE A: Editable PowerPoint (Reconstructed text elements & shapes)
-                    using var pdfDoc = PdfDocument.Open(inputPath);
+                    // MODE A: Editable PowerPoint (Reconstructed text elements, titles, shapes & images)
+                    using var pdfDoc = UglyToad.PdfPig.PdfDocument.Open(inputPath);
 
                     for (int i = 0; i < pagesToConvert.Count; i++)
                     {
@@ -211,10 +218,14 @@ public static class PdfToPptxConverter
                         if (words.Count > 0)
                         {
                             var lines = GroupWordsIntoLines(words);
+
+                            // Detect Slide Title: line with highest font size or topmost prominent line
+                            double maxFontSize = lines.Max(l => l.Average(w => w.BoundingBox.Height));
+                            bool titleAssigned = false;
+
                             foreach (var lineWords in lines)
                             {
                                 var firstWord = lineWords[0];
-                                // Convert PDF points to EMUs (PDF Y starts from bottom, PPTX Y starts from top)
                                 long xEmu = (long)Math.Round(firstWord.BoundingBox.Left * 12700);
                                 double topPt = page.Height - firstWord.BoundingBox.Top;
                                 long yEmu = Math.Max(0L, (long)Math.Round(topPt * 12700));
@@ -224,17 +235,28 @@ public static class PdfToPptxConverter
                                 long hEmu = Math.Max(254000L, (long)Math.Round(firstWord.BoundingBox.Height * 12700 * 1.3));
 
                                 var lineText = string.Join(" ", lineWords.Select(w => w.Text));
+                                totalChars += lineText.Length;
+
                                 bool isBold = lineWords.Any(w => w.FontName?.Contains("Bold", StringComparison.OrdinalIgnoreCase) == true);
                                 bool isItalic = lineWords.Any(w => w.FontName?.Contains("Italic", StringComparison.OrdinalIgnoreCase) == true);
                                 double avgFontPt = lineWords.Average(w => w.BoundingBox.Height);
+
+                                bool isTitleLine = !titleAssigned && (avgFontPt >= maxFontSize - 1.0) && avgFontPt >= 14.0;
+                                if (isTitleLine)
+                                {
+                                    titleAssigned = true;
+                                    titlesDetected++;
+                                    isBold = true;
+                                }
+
                                 int fontSizeHundredthPt = Math.Clamp((int)Math.Round(avgFontPt * 100.0), 1000, 7200);
 
-                                AddTextShape(shapeTree, lineText, xEmu, yEmu, wEmu, hEmu, fontSizeHundredthPt, isBold, isItalic);
+                                AddTextShape(shapeTree, lineText, xEmu, yEmu, wEmu, hEmu, fontSizeHundredthPt, isBold, isItalic, isTitleLine);
                             }
                         }
                         else
                         {
-                            // If page has no text, embed page raster image as slide background
+                            // If page has no text, embed page raster image as slide background and warn
                             var imageBytes = RenderPageToPng(inputPath, pageNum);
                             if (imageBytes != null && imageBytes.Length > 0)
                             {
@@ -245,7 +267,10 @@ public static class PdfToPptxConverter
                                 }
                                 string relId = slidePart.GetIdOfPart(imagePart);
                                 AddPictureShape(shapeTree, relId, $"Slide {i + 1} Image", 0L, 0L, slideWidthEmu, slideHeightEmu);
+                                imagesPreserved++;
                             }
+                            warnings.Add($"Page {pageNum} contained no extractable text; embedded as high-resolution visual slide.");
+                            status = PdfConversionStatus.SuccessfulWithLimitations;
                         }
 
                         // Add extracted raster images on page
@@ -266,6 +291,7 @@ public static class PdfToPptxConverter
                                     long imgW = Math.Max(127000L, (long)Math.Round(img.BoundingBox.Width * 12700));
                                     long imgH = Math.Max(127000L, (long)Math.Round(img.BoundingBox.Height * 12700));
                                     AddPictureShape(shapeTree, relId, "Figure", imgX, imgY, imgW, imgH);
+                                    imagesPreserved++;
                                 }
                             }
                         }
@@ -304,19 +330,36 @@ public static class PdfToPptxConverter
             long outputBytes = new FileInfo(finalPath).Length;
 
             string modeDesc = mode == PptxSlideMode.PageAsImage
-                ? "Page-as-Image (exact visual layout)"
+                ? "Page-as-Image (exact visual layout, non-editable text)"
                 : "Editable (reconstructed text & shapes)";
 
             string summaryNote = $"Converted {slidesCreated} slide(s) to PPTX [{modeDesc}] ({FileSizeFormatter.Format(outputBytes)}) in {sw.ElapsedMilliseconds} ms.";
 
             progress?.Report(new ProcessingProgress(100, "PowerPoint conversion complete."));
 
+            var qualityReport = new PdfConversionQualityReport(
+                SourcePath: inputPath,
+                OutputPath: finalPath,
+                OutputFiles: [finalPath],
+                ConversionMode: mode == PptxSlideMode.PageAsImage ? "PptxPageAsImage" : "PptxEditableReconstruction",
+                TotalInputPages: totalPages,
+                PagesProcessed: slidesCreated,
+                TotalCharactersExtracted: totalChars,
+                ImagesPreservedCount: imagesPreserved,
+                TablesReconstructedCount: 0,
+                HeadingsDetectedCount: titlesDetected,
+                Status: status,
+                Warnings: warnings,
+                OutputSizeBytes: outputBytes,
+                SummaryNote: summaryNote);
+
             return new PdfPptxResult(
                 finalPath,
                 totalPages,
                 slidesCreated,
                 mode,
-                summaryNote);
+                summaryNote,
+                qualityReport);
         }
         catch
         {
@@ -359,7 +402,17 @@ public static class PdfToPptxConverter
         shapeTree.AppendChild(picture);
     }
 
-    private static void AddTextShape(ShapeTree shapeTree, string text, long x, long y, long cx, long cy, int fontSizeHundredths, bool bold, bool italic)
+    private static void AddTextShape(
+        ShapeTree shapeTree,
+        string text,
+        long x,
+        long y,
+        long cx,
+        long cy,
+        int fontSizeHundredths,
+        bool bold,
+        bool italic,
+        bool isTitle = false)
     {
         uint shapeId = (uint)Random.Shared.Next(10, 100000);
 
@@ -370,9 +423,11 @@ public static class PdfToPptxConverter
         var run = new A.Run(runProps, new A.Text(text));
         var paragraph = new A.Paragraph(run);
 
+        string shapeName = isTitle ? $"Title {shapeId}" : $"Text {shapeId}";
+
         var shape = new P.Shape(
             new P.NonVisualShapeProperties(
-                new P.NonVisualDrawingProperties { Id = shapeId, Name = $"Text {shapeId}" },
+                new P.NonVisualDrawingProperties { Id = shapeId, Name = shapeName },
                 new P.NonVisualShapeDrawingProperties(new A.ShapeLocks { NoGrouping = true }),
                 new ApplicationNonVisualDrawingProperties()),
             new P.ShapeProperties(

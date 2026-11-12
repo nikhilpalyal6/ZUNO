@@ -9,6 +9,7 @@ using System.Windows.Media.Imaging;
 using Microsoft.Win32;
 using SmartShift.App.Ui;
 using SmartShift.Core.Classification;
+using SmartShift.Core.History;
 using SmartShift.Processing;
 using SmartShift.Processing.PresentationStudio.Import;
 using SmartShift.Processing.PresentationStudio.Models;
@@ -50,15 +51,7 @@ public partial class MainWindow : Window
         ClosePdfPreview();
 
         PresentationStudioHost.Visibility = Visibility.Visible;
-        NavPresentationBtn.Tag = "Active";
-        NavWorkspaceBtn.Tag = null;
-        NavQueueBtn.Tag = null;
-        NavDocBuilderBtn.Tag = null;
-        NavPdfMergeBtn.Tag = null;
-        NavPdfSplitBtn.Tag = null;
-        NavPdfOrganizeBtn.Tag = null;
-        NavPdfMergeBtn.Tag = null;
-        NavPdfSplitBtn.Tag = null;
+        SetActiveNavButton(NavPresentationBtn);
 
         if (targetFile is not null && App.Services.PresentationStudio.Importers.IsExtensionSupported(targetFile.Extension))
         {
@@ -90,7 +83,10 @@ public partial class MainWindow : Window
 
         PresentationStudioHost.Visibility = Visibility.Collapsed;
         NavPresentationBtn.Tag = null;
-        NavWorkspaceBtn.Tag = "Active";
+        if (!IsAnyStudioOpen())
+        {
+            SetActiveNavButton(NavWorkspaceBtn);
+        }
     }
 
     private void NavPresentation_Click(object sender, RoutedEventArgs e)
@@ -1038,6 +1034,9 @@ public partial class MainWindow : Window
             });
         });
 
+        var presStart = DateTimeOffset.UtcNow;
+        var presSw = Stopwatch.StartNew();
+
         try
         {
             var customName = PresDeckTitleBox.Text.Trim();
@@ -1048,10 +1047,28 @@ public partial class MainWindow : Window
                 customName,
                 progress,
                 token).ConfigureAwait(true);
+            presSw.Stop();
 
             _lastGeneratedPresentationPath = outputPath;
             _presHasUnsavedChanges = false;
             PresUnsavedBadge.Visibility = Visibility.Collapsed;
+
+            var inputPath = _presExtractedContent?.SourceFilePath;
+            App.Services.HistoryStore.Record(new OperationRecord(
+                Id: Guid.NewGuid().ToString("N"),
+                ActionId: "presentation.export",
+                ActionName: "Export Presentation",
+                Category: OperationCategory.Document,
+                InputPaths: !string.IsNullOrEmpty(inputPath) ? [inputPath] : [],
+                OutputPaths: [outputPath],
+                StartedAtUtc: presStart,
+                CompletedAtUtc: DateTimeOffset.UtcNow,
+                Duration: presSw.Elapsed,
+                Status: OperationStatus.Completed,
+                Options: new Dictionary<string, string> { ["Slides"] = deck.Slides.Count.ToString(), ["Theme"] = deck.Theme.Name },
+                PresetName: null,
+                FailureReason: null,
+                RetryOfOperationId: null));
 
             PresResultPathText.Text = outputPath;
             PresResultCard.Visibility = Visibility.Visible;
@@ -1059,10 +1076,46 @@ public partial class MainWindow : Window
         }
         catch (OperationCanceledException)
         {
+            presSw.Stop();
+            var inputPath = _presExtractedContent?.SourceFilePath;
+            App.Services.HistoryStore.Record(new OperationRecord(
+                Id: Guid.NewGuid().ToString("N"),
+                ActionId: "presentation.export",
+                ActionName: "Export Presentation",
+                Category: OperationCategory.Document,
+                InputPaths: !string.IsNullOrEmpty(inputPath) ? [inputPath] : [],
+                OutputPaths: [],
+                StartedAtUtc: presStart,
+                CompletedAtUtc: DateTimeOffset.UtcNow,
+                Duration: presSw.Elapsed,
+                Status: OperationStatus.Cancelled,
+                Options: new Dictionary<string, string>(),
+                PresetName: null,
+                FailureReason: "Export cancelled by user.",
+                RetryOfOperationId: null));
+
             ShowBanner("Presentation export was cancelled.", error: false, warning: true);
         }
         catch (Exception ex)
         {
+            presSw.Stop();
+            var inputPath = _presExtractedContent?.SourceFilePath;
+            App.Services.HistoryStore.Record(new OperationRecord(
+                Id: Guid.NewGuid().ToString("N"),
+                ActionId: "presentation.export",
+                ActionName: "Export Presentation",
+                Category: OperationCategory.Document,
+                InputPaths: !string.IsNullOrEmpty(inputPath) ? [inputPath] : [],
+                OutputPaths: [],
+                StartedAtUtc: presStart,
+                CompletedAtUtc: DateTimeOffset.UtcNow,
+                Duration: presSw.Elapsed,
+                Status: OperationStatus.Failed,
+                Options: new Dictionary<string, string>(),
+                PresetName: null,
+                FailureReason: ex.Message,
+                RetryOfOperationId: null));
+
             App.Logger.Error("pres", "Failed to export presentation", ex);
             ShowBanner($"Presentation export failed: {ex.Message}", error: true);
         }

@@ -50,14 +50,32 @@ public sealed class DocxPdfProcessor : IFileProcessor
             var options = new DocxPdfConversionOptions(PreferLocalWordEngine: preferWord);
             var finalPath = _allocator.Allocate(request.Input.Path, baseName);
 
-            var generatedPath = await Task.Run(
-                () => DocxToPdfConverter.Convert(request.Input.Path, finalPath, options, progress, cancellationToken),
+            var result = await Task.Run(
+                () => DocxToPdfConverter.ConvertWithReport(request.Input.Path, finalPath, options, progress, cancellationToken),
                 cancellationToken).ConfigureAwait(false);
 
+            var details = new Dictionary<string, string>
+            {
+                ["OutputPath"] = result.OutputPath,
+                ["outputPaths"] = result.OutputPath,
+                ["qualityStatus"] = result.QualityReport.Status.ToString(),
+                ["pagesCount"] = result.QualityReport.PagesOrSlidesCount.ToString(),
+                ["headingsDetected"] = result.QualityReport.HeadingsDetectedCount.ToString(),
+                ["tablesReconstructed"] = result.QualityReport.TablesReconstructedCount.ToString(),
+                ["imagesPreserved"] = result.QualityReport.ImagesPreservedCount.ToString(),
+                ["conversionMode"] = result.QualityReport.ConversionMode
+            };
+
+            var allNotes = result.QualityReport.Warnings.Concat(result.QualityReport.Limitations).ToList();
+            if (allNotes.Count > 0)
+            {
+                details["warnings"] = string.Join("; ", allNotes);
+            }
+
             return ProcessingResult.Success(
-                "Converted Word document to PDF successfully.",
-                generatedPath,
-                new Dictionary<string, string> { ["OutputPath"] = generatedPath });
+                result.SummaryNote,
+                result.OutputPath,
+                details);
         }
         catch (OperationCanceledException)
         {

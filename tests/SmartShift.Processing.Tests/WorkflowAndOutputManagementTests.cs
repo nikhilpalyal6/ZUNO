@@ -390,4 +390,40 @@ public sealed class WorkflowAndOutputManagementTests : IDisposable
         Assert.False(retryService.CanRetry(cancelledOp, out var cancelReason));
         Assert.Contains("Cancelled operations cannot be retried", cancelReason);
     }
+
+    [Fact]
+    public void OperationRecord_MultiInputAndOutput_DisplaysFormattedFileCount()
+    {
+        var singleInputSingleOutput = new OperationRecord(
+            Id: "rec-single",
+            ActionId: "image.convert",
+            ActionName: "Convert Image",
+            Category: OperationCategory.Image,
+            InputPaths: ["C:\\test\\photo.jpg"],
+            OutputPaths: ["C:\\test\\photo.webp"],
+            StartedAtUtc: DateTimeOffset.UtcNow,
+            CompletedAtUtc: DateTimeOffset.UtcNow,
+            Duration: TimeSpan.FromSeconds(1),
+            Status: OperationStatus.Completed,
+            Options: new Dictionary<string, string>());
+
+        Assert.Equal("photo.jpg", singleInputSingleOutput.PrimaryInputFileName);
+        Assert.Equal("photo.webp", singleInputSingleOutput.PrimaryOutputFileName);
+
+        var multiInputMultiOutput = new OperationRecord(
+            Id: "rec-multi",
+            ActionId: "pdf.split",
+            ActionName: "Split PDF",
+            Category: OperationCategory.Pdf,
+            InputPaths: ["C:\\test\\part1.pdf", "C:\\test\\part2.pdf", "C:\\test\\part3.pdf"],
+            OutputPaths: ["C:\\test\\out1.pdf", "C:\\test\\out2.pdf"],
+            StartedAtUtc: DateTimeOffset.UtcNow,
+            CompletedAtUtc: DateTimeOffset.UtcNow,
+            Duration: TimeSpan.FromSeconds(2),
+            Status: OperationStatus.Completed,
+            Options: new Dictionary<string, string>());
+
+        Assert.Equal("part1.pdf (+2 files)", multiInputMultiOutput.PrimaryInputFileName);
+        Assert.Equal("out1.pdf (+1 files)", multiInputMultiOutput.PrimaryOutputFileName);
+    }
 }

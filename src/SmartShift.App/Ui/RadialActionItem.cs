@@ -43,6 +43,10 @@ public sealed class RadialActionItem : INotifyPropertyChanged
             ActionIds.MergePdf => "Merge",
             ActionIds.SplitPdf => "Split",
             ActionIds.OrganizePdf => "Organize",
+            ActionIds.WatermarkPdf or ActionIds.AddDocxWatermark => "Watermark",
+            ActionIds.EditPdfMetadata or ActionIds.EditDocxMetadata => "Metadata",
+            ActionIds.MergeDocx => "Merge",
+            ActionIds.AddDocxPageNumbers => "Numbers",
             _ => recommendation.Title
         };
 
@@ -52,9 +56,9 @@ public sealed class RadialActionItem : INotifyPropertyChanged
             ActionIds.ConvertToWebp => "IconConvertGeometry",
             ActionIds.ResizeImage => "IconResizeGeometry",
             ActionIds.RemoveImageMetadata => "IconShieldGeometry",
-            ActionIds.EditImage => "IconEditGeometry",
-            ActionIds.ExportPdfPages => "IconExportGeometry",
-            ActionIds.ExtractPdfText or ActionIds.ConvertPdfToDocx => "IconDocumentGeometry",
+            ActionIds.EditImage or ActionIds.WatermarkPdf or ActionIds.AddDocxWatermark => "IconEditGeometry",
+            ActionIds.ExportPdfPages or ActionIds.MergeDocx => "IconExportGeometry",
+            ActionIds.ExtractPdfText or ActionIds.ConvertPdfToDocx or ActionIds.AddDocxPageNumbers => "IconDocumentGeometry",
             ActionIds.ConvertPdfToPptx => "IconPresentationGeometry",
             ActionIds.PreviewPdf => "IconEyeGeometry",
             ActionIds.MergePdf => "IconExportGeometry",

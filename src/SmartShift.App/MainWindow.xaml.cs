@@ -1423,13 +1423,27 @@ public partial class MainWindow : Window
             runStopwatch.Stop();
             _lastOutputPath = result.OutputPath;
 
+            IReadOnlyList<string> recordedOutputs;
+            if (result.Details.TryGetValue("outputPaths", out var pathsStr) && !string.IsNullOrWhiteSpace(pathsStr))
+            {
+                recordedOutputs = pathsStr.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            }
+            else if (!string.IsNullOrEmpty(result.OutputPath))
+            {
+                recordedOutputs = [result.OutputPath];
+            }
+            else
+            {
+                recordedOutputs = [];
+            }
+
             var opRecord = new OperationRecord(
                 Id: Guid.NewGuid().ToString("N"),
                 ActionId: _selectedAction.ActionId,
                 ActionName: _selectedAction.Title,
-                Category: _selectedFileItem.File.Format == DetectedFormat.Pdf ? OperationCategory.Pdf : (_selectedFileItem.File.Format == DetectedFormat.Docx ? OperationCategory.Document : OperationCategory.Image),
+                Category: _selectedFileItem.File.Format == DetectedFormat.Pdf ? OperationCategory.Pdf : (_selectedFileItem.File.Format is DetectedFormat.Docx or DetectedFormat.Pptx ? OperationCategory.Document : OperationCategory.Image),
                 InputPaths: [_selectedFileItem.File.Path],
-                OutputPaths: !string.IsNullOrEmpty(result.OutputPath) ? [result.OutputPath] : [],
+                OutputPaths: recordedOutputs,
                 StartedAtUtc: runStartedAt,
                 CompletedAtUtc: DateTimeOffset.UtcNow,
                 Duration: runStopwatch.Elapsed,
@@ -1476,7 +1490,7 @@ public partial class MainWindow : Window
                 Id: Guid.NewGuid().ToString("N"),
                 ActionId: _selectedAction.ActionId,
                 ActionName: _selectedAction.Title,
-                Category: _selectedFileItem.File.Format == DetectedFormat.Pdf ? OperationCategory.Pdf : (_selectedFileItem.File.Format == DetectedFormat.Docx ? OperationCategory.Document : OperationCategory.Image),
+                Category: _selectedFileItem.File.Format == DetectedFormat.Pdf ? OperationCategory.Pdf : (_selectedFileItem.File.Format is DetectedFormat.Docx or DetectedFormat.Pptx ? OperationCategory.Document : OperationCategory.Image),
                 InputPaths: [_selectedFileItem.File.Path],
                 OutputPaths: [],
                 StartedAtUtc: runStartedAt,
@@ -1513,7 +1527,7 @@ public partial class MainWindow : Window
                 Id: Guid.NewGuid().ToString("N"),
                 ActionId: _selectedAction.ActionId,
                 ActionName: _selectedAction.Title,
-                Category: _selectedFileItem.File.Format == DetectedFormat.Pdf ? OperationCategory.Pdf : (_selectedFileItem.File.Format == DetectedFormat.Docx ? OperationCategory.Document : OperationCategory.Image),
+                Category: _selectedFileItem.File.Format == DetectedFormat.Pdf ? OperationCategory.Pdf : (_selectedFileItem.File.Format is DetectedFormat.Docx or DetectedFormat.Pptx ? OperationCategory.Document : OperationCategory.Image),
                 InputPaths: [_selectedFileItem.File.Path],
                 OutputPaths: [],
                 StartedAtUtc: runStartedAt,
@@ -1989,6 +2003,29 @@ public partial class MainWindow : Window
         NavSettingsText.Visibility = vis;
     }
 
+    public void SetActiveNavButton(Button? activeButton)
+    {
+        if (NavWorkspaceBtn is not null) NavWorkspaceBtn.Tag = (activeButton == NavWorkspaceBtn) ? "Active" : null;
+        if (NavQueueBtn is not null) NavQueueBtn.Tag = (activeButton == NavQueueBtn) ? "Active" : null;
+        if (NavDocBuilderBtn is not null) NavDocBuilderBtn.Tag = (activeButton == NavDocBuilderBtn) ? "Active" : null;
+        if (NavPresentationBtn is not null) NavPresentationBtn.Tag = (activeButton == NavPresentationBtn) ? "Active" : null;
+        if (NavPdfMergeBtn is not null) NavPdfMergeBtn.Tag = (activeButton == NavPdfMergeBtn) ? "Active" : null;
+        if (NavPdfSplitBtn is not null) NavPdfSplitBtn.Tag = (activeButton == NavPdfSplitBtn) ? "Active" : null;
+        if (NavPdfOrganizeBtn is not null) NavPdfOrganizeBtn.Tag = (activeButton == NavPdfOrganizeBtn) ? "Active" : null;
+        if (NavRecentBtn is not null) NavRecentBtn.Tag = null;
+        if (NavSettingsBtn is not null) NavSettingsBtn.Tag = null;
+    }
+
+    public bool IsAnyStudioOpen()
+    {
+        return (BatchStudioHost?.Visibility == Visibility.Visible) ||
+               (DocumentBuilderHost?.Visibility == Visibility.Visible) ||
+               (PresentationStudioHost?.Visibility == Visibility.Visible) ||
+               (PdfMergeStudioHost?.Visibility == Visibility.Visible) ||
+               (PdfSplitStudioHost?.Visibility == Visibility.Visible) ||
+               (PdfOrganizeStudioHost?.Visibility == Visibility.Visible);
+    }
+
     private void NavWorkspace_Click(object sender, RoutedEventArgs e)
     {
         RecentResultsFlyout.Visibility = Visibility.Collapsed;
@@ -1999,15 +2036,7 @@ public partial class MainWindow : Window
         ClosePdfMergeStudio();
         ClosePdfSplitStudio();
         ClosePdfOrganizeStudio();
-        NavWorkspaceBtn.Tag = "Active";
-        NavQueueBtn.Tag = null;
-        NavDocBuilderBtn.Tag = null;
-        NavPresentationBtn.Tag = null;
-        NavPdfMergeBtn.Tag = null;
-        NavPdfSplitBtn.Tag = null;
-        NavPdfOrganizeBtn.Tag = null;
-        NavRecentBtn.Tag = null;
-        NavSettingsBtn.Tag = null;
+        SetActiveNavButton(NavWorkspaceBtn);
     }
 
     private void NavQueue_Click(object sender, RoutedEventArgs e)
@@ -3188,10 +3217,7 @@ public partial class MainWindow : Window
         ClosePdfPreview();
 
         BatchStudioHost.Visibility = Visibility.Visible;
-        NavQueueBtn.Tag = "Active";
-        NavWorkspaceBtn.Tag = null;
-        NavPdfMergeBtn.Tag = null;
-        NavPdfSplitBtn.Tag = null;
+        SetActiveNavButton(NavQueueBtn);
 
         // Auto-populate from workspace files if batch queue is empty
         if (_batchFiles.Count == 0 && _files.Count > 0)
@@ -3223,7 +3249,10 @@ public partial class MainWindow : Window
 
         BatchStudioHost.Visibility = Visibility.Collapsed;
         NavQueueBtn.Tag = null;
-        NavWorkspaceBtn.Tag = "Active";
+        if (!IsAnyStudioOpen())
+        {
+            SetActiveNavButton(NavWorkspaceBtn);
+        }
     }
 
     private void OpenBatchStudio_Click(object sender, RoutedEventArgs e) => OpenBatchStudio();
@@ -3735,11 +3764,7 @@ public partial class MainWindow : Window
         ClosePdfPreview();
 
         DocumentBuilderHost.Visibility = Visibility.Visible;
-        NavDocBuilderBtn.Tag = "Active";
-        NavWorkspaceBtn.Tag = null;
-        NavQueueBtn.Tag = null;
-        NavPdfMergeBtn.Tag = null;
-        NavPdfSplitBtn.Tag = null;
+        SetActiveNavButton(NavDocBuilderBtn);
 
         // Auto-populate from workspace files if empty
         if (_docBuilderFiles.Count == 0 && _files.Count > 0)
@@ -3771,7 +3796,10 @@ public partial class MainWindow : Window
 
         DocumentBuilderHost.Visibility = Visibility.Collapsed;
         NavDocBuilderBtn.Tag = null;
-        NavWorkspaceBtn.Tag = "Active";
+        if (!IsAnyStudioOpen())
+        {
+            SetActiveNavButton(NavWorkspaceBtn);
+        }
     }
 
     private void UpdateDocBuilderSequence()

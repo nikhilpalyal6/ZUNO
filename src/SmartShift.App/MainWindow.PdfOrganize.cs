@@ -59,13 +59,7 @@ public partial class MainWindow : Window
         ClosePdfPreview();
 
         PdfOrganizeStudioHost.Visibility = Visibility.Visible;
-        NavPdfOrganizeBtn.Tag = "Active";
-        NavWorkspaceBtn.Tag = null;
-        NavQueueBtn.Tag = null;
-        NavDocBuilderBtn.Tag = null;
-        NavPresentationBtn.Tag = null;
-        NavPdfMergeBtn.Tag = null;
-        NavPdfSplitBtn.Tag = null;
+        SetActiveNavButton(NavPdfOrganizeBtn);
 
         // Determine path to load
         string? pathToLoad = targetPdfPath;
@@ -96,6 +90,10 @@ public partial class MainWindow : Window
 
         PdfOrganizeStudioHost.Visibility = Visibility.Collapsed;
         NavPdfOrganizeBtn.Tag = null;
+        if (!IsAnyStudioOpen())
+        {
+            SetActiveNavButton(NavWorkspaceBtn);
+        }
     }
 
     private void NavPdfOrganize_Click(object sender, RoutedEventArgs e)
@@ -700,6 +698,23 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
+            organizeSw.Stop();
+            App.Services.HistoryStore.Record(new OperationRecord(
+                Id: Guid.NewGuid().ToString("N"),
+                ActionId: "pdf.organize",
+                ActionName: "Organize PDF Pages",
+                Category: OperationCategory.Pdf,
+                InputPaths: [_organizeSession.SourceFilePath],
+                OutputPaths: [],
+                StartedAtUtc: organizeStart,
+                CompletedAtUtc: DateTimeOffset.UtcNow,
+                Duration: organizeSw.Elapsed,
+                Status: OperationStatus.Failed,
+                Options: new Dictionary<string, string>(),
+                PresetName: null,
+                FailureReason: ex.Message,
+                RetryOfOperationId: null));
+
             MessageBox.Show(this, $"Export failed: {ex.Message}", "Export Error", MessageBoxButton.OK, MessageBoxImage.Error);
             PdfOrganizeProgressText.Text = $"Export error: {ex.Message}";
         }

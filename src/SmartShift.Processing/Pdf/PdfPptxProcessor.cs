@@ -106,6 +106,7 @@ public sealed class PdfPptxProcessor : IFileProcessor
 
         long outputBytes = new FileInfo(result.OutputPath).Length;
 
+        var qr = result.QualityReport;
         var details = new Dictionary<string, string>
         {
             ["actionId"] = ActionIds.ConvertPdfToPptx,
@@ -118,6 +119,10 @@ public sealed class PdfPptxProcessor : IFileProcessor
             ["slideMode"] = result.SlideMode == PptxSlideMode.PageAsImage ? "pageAsImage" : "editable",
             ["slidesCount"] = result.SlidesCreatedCount.ToString(),
             ["totalPages"] = result.TotalPagesInDoc.ToString(),
+            ["headingsDetected"] = (qr?.HeadingsDetectedCount ?? 0).ToString(),
+            ["imagesPreserved"] = (qr?.ImagesPreservedCount ?? 0).ToString(),
+            ["qualityStatus"] = (qr?.Status ?? PdfConversionStatus.Successful).ToString(),
+            ["warnings"] = string.Join("; ", qr?.Warnings ?? []),
             ["summaryNote"] = result.SummaryNote,
             ["originalUnchanged"] = "true"
         };

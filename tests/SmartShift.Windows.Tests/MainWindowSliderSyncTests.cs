@@ -2061,8 +2061,8 @@ public sealed class MainWindowSliderSyncTests
                 Assert.True(window.IsUnifiedConvertActive);
 
                 var targetsPanel = (WrapPanel)window.FindName("UnifiedTargetFormatsPanel");
-                // PDF has 5 targets: Docx, Pptx, Txt, Png, Jpeg
-                Assert.Equal(5, targetsPanel.Children.Count);
+                // PDF has 6 targets: Docx, Pptx, Txt, Png, Jpeg, Webp
+                Assert.Equal(6, targetsPanel.Children.Count);
 
                 // Initial target is Docx
                 Assert.Equal(DetectedFormat.Docx, window.SelectedUnifiedTargetFormat);

@@ -4,6 +4,7 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using SmartShift.Core.Actions;
 using SmartShift.Core.Classification;
+using SmartShift.Core.History;
 using SmartShift.Core.IO;
 using SmartShift.Processing;
 using SmartShift.Processing.Conversion;
@@ -128,7 +129,15 @@ public partial class MainWindow
         DetectedFormat.Docx => "Word (.docx)",
         DetectedFormat.Pptx => "PowerPoint (.pptx)",
         DetectedFormat.Txt => "Plain Text (.txt)",
+        DetectedFormat.Html => "HTML (.html)",
         _ => format.ToString().ToUpperInvariant()
+    };
+
+    private static OperationCategory GetOperationCategory(DetectedFormat format) => format switch
+    {
+        DetectedFormat.Pdf => OperationCategory.Pdf,
+        DetectedFormat.Docx or DetectedFormat.Pptx => OperationCategory.Document,
+        _ => OperationCategory.Image
     };
 
     private void UnifiedTargetFormatButton_Click(object sender, RoutedEventArgs e)
@@ -175,6 +184,54 @@ public partial class MainWindow
                 ? "✓ Lossless PNG encoding. Original alpha channel and dimensions are strictly preserved."
                 : "✓ High efficiency compression. Original source file is strictly untouched.";
         }
+        else if (sourceFormat == DetectedFormat.Docx)
+        {
+            if (target == DetectedFormat.Pdf)
+            {
+                UnifiedFormatGuaranteeNote.Text = "✓ High-fidelity PDF generation preserving headings, paragraphs, lists, tables, and images.";
+            }
+            else if (target == DetectedFormat.Pptx)
+            {
+                UnifiedFormatGuaranteeNote.Text = "✓ Creates PowerPoint presentation deck structured by headings and paragraphs.";
+            }
+            else if (target == DetectedFormat.Txt)
+            {
+                UnifiedFormatGuaranteeNote.Text = "✓ Extracts document text and tables to clean UTF-8 plain text with preserved document order.";
+            }
+            else if (target == DetectedFormat.Html)
+            {
+                UnifiedFormatGuaranteeNote.Text = "✓ Generates self-contained HTML5 with formatted typography, tables, and embedded images.";
+            }
+        }
+        else if (sourceFormat == DetectedFormat.Pptx)
+        {
+            UnifiedPdfRangePanel.Visibility = Visibility.Visible;
+
+            if (target == DetectedFormat.Pdf)
+            {
+                UnifiedFormatGuaranteeNote.Text = "✓ Generates high-fidelity PDF slides with vector shapes, text, tables, and images.";
+            }
+            else if (target == DetectedFormat.Txt)
+            {
+                UnifiedFormatGuaranteeNote.Text = "✓ Extracts slide titles, text shapes, and tables in visual order to UTF-8 plain text.";
+            }
+            else if (target is DetectedFormat.Png or DetectedFormat.Jpeg or DetectedFormat.Webp)
+            {
+                UnifiedPdfDpiPanel.Visibility = Visibility.Visible;
+                if (target is DetectedFormat.Jpeg or DetectedFormat.Webp)
+                {
+                    UnifiedImageQualityPanel.Visibility = Visibility.Visible;
+                    UnifiedQualityHintText.Text = target == DetectedFormat.Webp
+                        ? "WebP quality for exported slide images (1–100). Preserves alpha transparency."
+                        : "JPEG quality for exported slide images (1–100).";
+                }
+                UnifiedFormatGuaranteeNote.Text = target == DetectedFormat.Webp
+                    ? "✓ Exports PowerPoint slides as lightweight, modern WebP raster images."
+                    : (target == DetectedFormat.Png
+                        ? "✓ Exports PowerPoint slides as lossless, high-resolution PNG image files."
+                        : "✓ Exports PowerPoint slides as standard JPEG image files.");
+            }
+        }
         else if (sourceFormat == DetectedFormat.Pdf)
         {
             UnifiedPdfRangePanel.Visibility = Visibility.Visible;
@@ -192,15 +249,21 @@ public partial class MainWindow
             {
                 UnifiedFormatGuaranteeNote.Text = "✓ Extracted in natural document reading order with clean page separators and UTF-8 encoding.";
             }
-            else if (target is DetectedFormat.Png or DetectedFormat.Jpeg)
+            else if (target is DetectedFormat.Png or DetectedFormat.Jpeg or DetectedFormat.Webp)
             {
                 UnifiedPdfDpiPanel.Visibility = Visibility.Visible;
-                if (target == DetectedFormat.Jpeg)
+                if (target is DetectedFormat.Jpeg or DetectedFormat.Webp)
                 {
                     UnifiedImageQualityPanel.Visibility = Visibility.Visible;
-                    UnifiedQualityHintText.Text = "JPEG quality for exported page images (1–100).";
+                    UnifiedQualityHintText.Text = target == DetectedFormat.Webp
+                        ? "WebP quality for exported page images (1–100). Preserves alpha transparency."
+                        : "JPEG quality for exported page images (1–100).";
                 }
-                UnifiedFormatGuaranteeNote.Text = "✓ Exports PDF pages as standalone high-resolution raster images.";
+                UnifiedFormatGuaranteeNote.Text = target == DetectedFormat.Webp
+                    ? "✓ Exports PDF pages as lightweight, modern WebP raster images."
+                    : (target == DetectedFormat.Png
+                        ? "✓ Exports PDF pages as lossless, high-resolution PNG image files."
+                        : "✓ Exports PDF pages as standard JPEG image files.");
             }
         }
 
@@ -218,7 +281,7 @@ public partial class MainWindow
         }
 
         var sourceFormat = _selectedFileItem?.File.Format ?? DetectedFormat.Unknown;
-        if (sourceFormat == DetectedFormat.Pdf)
+        if (sourceFormat is DetectedFormat.Pdf or DetectedFormat.Pptx)
         {
             var range = UnifiedPdfRangeBox.Text.Trim();
             if (!string.IsNullOrWhiteSpace(range) && !PageRangeParser.TryValidateSyntax(range, out var err))
@@ -343,6 +406,9 @@ public partial class MainWindow
         ProgressText.Text = "Converting…";
         ResultCardHost.Visibility = Visibility.Collapsed;
 
+        var runStartedAt = DateTimeOffset.UtcNow;
+        var runStopwatch = System.Diagnostics.Stopwatch.StartNew();
+
         try
         {
             var progress = new Progress<ProcessingProgress>(p =>
@@ -363,7 +429,45 @@ public partial class MainWindow
                 progress,
                 token).ConfigureAwait(true);
 
+            runStopwatch.Stop();
             _lastOutputPath = result.OutputPath;
+
+            // Multi-output extraction for history store
+            IReadOnlyList<string> recordedOutputs;
+            if (result.Details.TryGetValue("outputPaths", out var pathsStr) && !string.IsNullOrWhiteSpace(pathsStr))
+            {
+                recordedOutputs = pathsStr.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            }
+            else if (!string.IsNullOrEmpty(result.OutputPath))
+            {
+                recordedOutputs = [result.OutputPath];
+            }
+            else
+            {
+                recordedOutputs = [];
+            }
+
+            var opStatus = result.WasCancelled
+                ? OperationStatus.Cancelled
+                : (result.Succeeded ? OperationStatus.Completed : OperationStatus.Failed);
+
+            var opRecord = new OperationRecord(
+                Id: Guid.NewGuid().ToString("N"),
+                ActionId: ActionIds.UnifiedConvert,
+                ActionName: $"Convert to {GetTargetButtonLabel(_selectedUnifiedTargetFormat.Value)}",
+                Category: GetOperationCategory(_selectedFileItem.File.Format),
+                InputPaths: [_selectedFileItem.File.Path],
+                OutputPaths: recordedOutputs,
+                StartedAtUtc: runStartedAt,
+                CompletedAtUtc: DateTimeOffset.UtcNow,
+                Duration: runStopwatch.Elapsed,
+                Status: opStatus,
+                Options: new Dictionary<string, string>(optionsDict) { ["targetFormat"] = _selectedUnifiedTargetFormat.Value.ToString().ToLowerInvariant() },
+                PresetName: null,
+                FailureReason: result.Succeeded ? null : result.Status,
+                RetryOfOperationId: null);
+
+            App.Services.HistoryStore.Record(opRecord);
 
             var summary = ProcessingResultSummary.FromResult(
                 result.Succeeded,
@@ -378,9 +482,11 @@ public partial class MainWindow
 
             RevealResultButton.Visibility = File.Exists(_lastOutputPath ?? "") ? Visibility.Visible : Visibility.Collapsed;
 
+            bool isLimited = result.Details.TryGetValue("qualityStatus", out var qs) && qs == "SuccessfulWithLimitations";
+
             if (result.Succeeded)
             {
-                ShowBanner(summary.Status, error: false, warning: false);
+                ShowBanner(summary.Status, error: false, warning: isLimited);
             }
             else if (!result.WasCancelled)
             {
@@ -389,11 +495,49 @@ public partial class MainWindow
         }
         catch (OperationCanceledException)
         {
+            runStopwatch.Stop();
+            var cancelRecord = new OperationRecord(
+                Id: Guid.NewGuid().ToString("N"),
+                ActionId: ActionIds.UnifiedConvert,
+                ActionName: $"Convert to {GetTargetButtonLabel(_selectedUnifiedTargetFormat.Value)}",
+                Category: GetOperationCategory(_selectedFileItem.File.Format),
+                InputPaths: [_selectedFileItem.File.Path],
+                OutputPaths: [],
+                StartedAtUtc: runStartedAt,
+                CompletedAtUtc: DateTimeOffset.UtcNow,
+                Duration: runStopwatch.Elapsed,
+                Status: OperationStatus.Cancelled,
+                Options: new Dictionary<string, string>(optionsDict) { ["targetFormat"] = _selectedUnifiedTargetFormat.Value.ToString().ToLowerInvariant() },
+                PresetName: null,
+                FailureReason: "Conversion cancelled by user.",
+                RetryOfOperationId: null);
+
+            App.Services.HistoryStore.Record(cancelRecord);
+
             ProgressText.Text = "Conversion cancelled.";
             ShowBanner("Conversion cancelled.", error: false, warning: true);
         }
         catch (Exception ex)
         {
+            runStopwatch.Stop();
+            var failRecord = new OperationRecord(
+                Id: Guid.NewGuid().ToString("N"),
+                ActionId: ActionIds.UnifiedConvert,
+                ActionName: $"Convert to {GetTargetButtonLabel(_selectedUnifiedTargetFormat.Value)}",
+                Category: GetOperationCategory(_selectedFileItem.File.Format),
+                InputPaths: [_selectedFileItem.File.Path],
+                OutputPaths: [],
+                StartedAtUtc: runStartedAt,
+                CompletedAtUtc: DateTimeOffset.UtcNow,
+                Duration: runStopwatch.Elapsed,
+                Status: OperationStatus.Failed,
+                Options: new Dictionary<string, string>(optionsDict) { ["targetFormat"] = _selectedUnifiedTargetFormat.Value.ToString().ToLowerInvariant() },
+                PresetName: null,
+                FailureReason: ex.Message,
+                RetryOfOperationId: null);
+
+            App.Services.HistoryStore.Record(failRecord);
+
             ShowBanner($"Conversion failed: {ex.Message}", error: true, warning: false);
         }
         finally
