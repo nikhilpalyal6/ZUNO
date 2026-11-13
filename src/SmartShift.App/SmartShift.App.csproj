@@ -1,11 +1,16 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <OutputType>WinExe</OutputType>
-    <TargetFramework>net10.0-windows</TargetFramework>
-    <UseWPF>true</UseWPF>
-    <ApplicationTitle>ZUNO</ApplicationTitle>
-    <RootNamespace>SmartShift.App</RootNamespace>
-    <Nullable>enable</Nullable>
+  <OutputType>WinExe</OutputType>
+  <TargetFramework>net10.0-windows</TargetFramework>
+  <UseWPF>true</UseWPF>
+
+  <AssemblyName>ZUNO</AssemblyName>
+  <ApplicationTitle>ZUNO</ApplicationTitle>
+  <Product>ZUNO</Product>
+  <ApplicationIcon>Assets\ZUNO.ico</ApplicationIcon>
+
+  <RootNamespace>SmartShift.App</RootNamespace>
+  <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
     <Resource Include="Assets\**\*" />
