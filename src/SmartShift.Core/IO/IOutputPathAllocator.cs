@@ -7,4 +7,6 @@ public interface IOutputPathAllocator
     void EnsureRoot();
 
     string Allocate(string originalPath, string desiredFileName);
+
+    void SetRootDirectory(string newPath) { }
 }

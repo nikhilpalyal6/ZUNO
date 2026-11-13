@@ -3,10 +3,13 @@
     <OutputType>WinExe</OutputType>
     <TargetFramework>net10.0-windows</TargetFramework>
     <UseWPF>true</UseWPF>
-    <ApplicationTitle>SmartShift</ApplicationTitle>
+    <ApplicationTitle>ZUNO</ApplicationTitle>
     <RootNamespace>SmartShift.App</RootNamespace>
     <Nullable>enable</Nullable>
   </PropertyGroup>
+  <ItemGroup>
+    <Resource Include="Assets\**\*" />
+  </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\SmartShift.Core\SmartShift.Core.csproj" />
     <ProjectReference Include="..\SmartShift.Windows\SmartShift.Windows.csproj" />

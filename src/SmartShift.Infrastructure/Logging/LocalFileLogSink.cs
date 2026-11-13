@@ -12,9 +12,9 @@ public sealed class LocalFileLogSink : IDisposable
     {
         _logger = logger;
         var dir = directory
-            ?? System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SmartShift", "logs");
+            ?? System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "ZUNO", "logs");
         Directory.CreateDirectory(dir);
-        _path = System.IO.Path.Combine(dir, "smartshift.log");
+        _path = System.IO.Path.Combine(dir, "zuno.log");
         _logger.EntryAdded += OnEntry;
     }
 

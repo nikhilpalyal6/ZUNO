@@ -1,3 +1,4 @@
+using System.IO;
 using SmartShift.Core.Actions;
 using SmartShift.Core.Capabilities;
 using SmartShift.Core.Classification;
@@ -5,6 +6,7 @@ using SmartShift.Core.Logging;
 using SmartShift.Core.Queueing;
 using SmartShift.Infrastructure.Logging;
 using SmartShift.Infrastructure.Output;
+using SmartShift.Infrastructure.Settings;
 using SmartShift.Processing;
 using SmartShift.Processing.Batch;
 using SmartShift.Processing.Conversion;
@@ -51,6 +53,19 @@ public sealed class AppServices : IDisposable
         ImagePresets = new ImagePresetStore();
         HistoryStore = new ProcessingHistoryStore();
         WorkflowStore = new SavedWorkflowStore();
+        Settings = new SettingsService();
+        var defaultOut = Settings.Current.DefaultOutputDirectory;
+        if (!string.IsNullOrWhiteSpace(defaultOut) && Directory.Exists(defaultOut))
+        {
+            Outputs.SetRootDirectory(defaultOut);
+        }
+        Settings.SettingsChanged += (_, s) =>
+        {
+            if (!string.IsNullOrWhiteSpace(s.DefaultOutputDirectory) && Directory.Exists(s.DefaultOutputDirectory))
+            {
+                Outputs.SetRootDirectory(s.DefaultOutputDirectory);
+            }
+        };
         RetryService = new OperationRetryService(Processors, Outputs, Classifier, HistoryStore);
         WorkflowExecution = new WorkflowExecutionService(Processors, Outputs, HistoryStore);
         LogSink = new LocalFileLogSink(logger);
@@ -81,6 +96,7 @@ public sealed class AppServices : IDisposable
     public ImagePresetStore ImagePresets { get; }
     public IProcessingHistoryStore HistoryStore { get; }
     public ISavedWorkflowStore WorkflowStore { get; }
+    public ISettingsService Settings { get; }
     public IOperationRetryService RetryService { get; }
     public IWorkflowExecutionService WorkflowExecution { get; }
     public OutputPathAllocator Outputs { get; }

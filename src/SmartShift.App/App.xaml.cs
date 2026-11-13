@@ -21,7 +21,7 @@ public partial class App : Application
         DiagnosticsRequested = e.Args.Any(a => string.Equals(a, "--diagnostics", StringComparison.OrdinalIgnoreCase));
         ThemeLoader.Apply(this);
         Services = new AppServices(Logger);
-        Logger.Info("app", "SmartShift starting.", new Dictionary<string, string>
+        Logger.Info("app", "ZUNO starting.", new Dictionary<string, string>
         {
             ["diagnostics"] = DiagnosticsRequested.ToString()
         });
@@ -30,7 +30,7 @@ public partial class App : Application
 
     protected override void OnExit(ExitEventArgs e)
     {
-        Logger.Info("app", "SmartShift exiting.", new Dictionary<string, string>
+        Logger.Info("app", "ZUNO exiting.", new Dictionary<string, string>
         {
             ["exitCode"] = e.ApplicationExitCode.ToString()
         });
@@ -43,7 +43,7 @@ public partial class App : Application
         Logger.Error("app", "Dispatcher unhandled exception.", e.Exception);
         MessageBox.Show(
             "An unexpected error occurred. Your file queue is still in memory. Original files were not modified. Details are in the local log.",
-            "SmartShift",
+            "ZUNO",
             MessageBoxButton.OK,
             MessageBoxImage.Error);
         e.Handled = true;

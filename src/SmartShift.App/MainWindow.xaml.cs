@@ -13,6 +13,7 @@ using SmartShift.Core.Actions;
 using SmartShift.Core.Classification;
 using SmartShift.Core.History;
 using SmartShift.Core.IO;
+using SmartShift.Core.Settings;
 using SmartShift.Core.Workflows;
 using SmartShift.Processing;
 using SmartShift.Processing.Batch;
@@ -99,6 +100,7 @@ public partial class MainWindow : Window
         InitializePdfSplitStudio();
         InitializePdfPageOrganizerStudio();
         InitializeHistoryStudio();
+        InitializeSettings();
 
         Closed += (_, _) =>
         {
@@ -260,6 +262,7 @@ public partial class MainWindow : Window
         if (_selectedFileItem is null)
         {
             DocxWorkspaceHost.Visibility = Visibility.Collapsed;
+            SetDocxWorkspaceActive(false);
             SmartCircleWorkspaceGrid.Visibility = Visibility.Visible;
             EmptyRadialPlaceholder.Visibility = Visibility.Visible;
             RadialMenuCanvas.Visibility = Visibility.Collapsed;
@@ -287,6 +290,7 @@ public partial class MainWindow : Window
             ActionConfigPanel.Visibility = Visibility.Collapsed;
             _isUnifiedConvertActive = false;
             if (UnifiedConvertOptionsView is not null) UnifiedConvertOptionsView.Visibility = Visibility.Collapsed;
+            SetDocxWorkspaceActive(true);
             DocxWorkspaceHost.Visibility = Visibility.Visible;
             _ = LoadDocxWorkspaceAsync(_selectedFileItem.File);
             return;
@@ -294,6 +298,7 @@ public partial class MainWindow : Window
 
         // Standard File / Radial Workspace
         DocxWorkspaceHost.Visibility = Visibility.Collapsed;
+        SetDocxWorkspaceActive(false);
         SmartCircleWorkspaceGrid.Visibility = Visibility.Visible;
         EmptyRadialPlaceholder.Visibility = Visibility.Collapsed;
         RadialMenuCanvas.Visibility = Visibility.Visible;
@@ -313,6 +318,28 @@ public partial class MainWindow : Window
         {
             // Populate Radial Actions
             PopulateRadialActions(_selectedFileItem.File);
+        }
+    }
+
+    private void SetDocxWorkspaceActive(bool active)
+    {
+        if (WorkspaceRightPaneColumn is null || WorkspaceRightSplitterColumn is null) return;
+
+        if (active)
+        {
+            WorkspaceRightSplitterColumn.Width = new GridLength(0);
+            WorkspaceRightPaneColumn.Width = new GridLength(0);
+            WorkspaceRightPaneColumn.MinWidth = 0;
+            if (WorkspaceRightSplitter is not null) WorkspaceRightSplitter.Visibility = Visibility.Collapsed;
+            if (WorkspaceRightPaneBorder is not null) WorkspaceRightPaneBorder.Visibility = Visibility.Collapsed;
+        }
+        else
+        {
+            WorkspaceRightSplitterColumn.Width = new GridLength(10);
+            WorkspaceRightPaneColumn.Width = new GridLength(360);
+            WorkspaceRightPaneColumn.MinWidth = 320;
+            if (WorkspaceRightSplitter is not null) WorkspaceRightSplitter.Visibility = Visibility.Visible;
+            if (WorkspaceRightPaneBorder is not null) WorkspaceRightPaneBorder.Visibility = Visibility.Visible;
         }
     }
 
@@ -1870,6 +1897,8 @@ public partial class MainWindow : Window
         _selectedAction = null;
         _radialItems.Clear();
 
+        DocxWorkspaceHost.Visibility = Visibility.Collapsed;
+        SetDocxWorkspaceActive(false);
         EmptyRadialPlaceholder.Visibility = Visibility.Visible;
         RadialMenuCanvas.Visibility = Visibility.Collapsed;
         NoActionPlaceholder.Visibility = Visibility.Visible;
@@ -1939,7 +1968,7 @@ public partial class MainWindow : Window
             EmptyState.Visibility = Visibility.Visible;
             FileList.Visibility = Visibility.Collapsed;
             CompactDropCue.Visibility = Visibility.Collapsed;
-            QueueSummary.Text = "Drop files to begin.";
+            QueueSummary.Text = "Drop files here to get started.";
         }
         else
         {
@@ -2060,7 +2089,172 @@ public partial class MainWindow : Window
     private void NavSettings_Click(object sender, RoutedEventArgs e)
     {
         RecentResultsFlyout.Visibility = Visibility.Collapsed;
-        SettingsFlyout.Visibility = SettingsFlyout.Visibility == Visibility.Visible ? Visibility.Collapsed : Visibility.Visible;
+        var willShow = SettingsFlyout.Visibility != Visibility.Visible;
+        if (willShow)
+        {
+            PopulateSettingsUi(App.Services.Settings.Current);
+            SettingsStatusText.Visibility = Visibility.Collapsed;
+        }
+        SettingsFlyout.Visibility = willShow ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private void InitializeSettings()
+    {
+        var settings = App.Services.Settings.Current;
+        PopulateSettingsUi(settings);
+
+        if (settings.ShowFirstRunTips)
+        {
+            HelpOverlay.Visibility = Visibility.Visible;
+            HelpDoNotShowCheck.IsChecked = false;
+        }
+    }
+
+    private void PopulateSettingsUi(AppSettings settings)
+    {
+        SettingsOutputDirBox.Text = string.IsNullOrWhiteSpace(settings.DefaultOutputDirectory)
+            ? App.Services.Outputs.RootDirectory
+            : settings.DefaultOutputDirectory;
+
+        SettingsNamingPatternBox.Text = settings.OutputNamingPattern;
+
+        SettingsValidationCombo.SelectedIndex = settings.DefaultValidationLevel switch
+        {
+            QualityValidationLevel.Basic => 0,
+            QualityValidationLevel.Standard => 1,
+            QualityValidationLevel.Deep => 2,
+            _ => 1
+        };
+
+        SettingsDpiCombo.SelectedIndex = settings.DefaultPdfDpi switch
+        {
+            72 => 0,
+            100 => 1,
+            150 => 2,
+            300 => 3,
+            _ => 2
+        };
+
+        SettingsQualityCombo.SelectedIndex = settings.DefaultImageQuality switch
+        {
+            75 => 0,
+            85 => 1,
+            90 => 2,
+            95 => 3,
+            100 => 4,
+            _ => 1
+        };
+
+        SettingsConcurrencyCombo.SelectedIndex = settings.MaxConcurrentOperations switch
+        {
+            1 => 0,
+            2 => 1,
+            4 => 2,
+            8 => 3,
+            _ => 2
+        };
+
+        SettingsNotifyOnCompleteCheck.IsChecked = settings.NotifyOnCompletion;
+        SettingsShowFirstRunTipsCheck.IsChecked = settings.ShowFirstRunTips;
+    }
+
+    private void HelpGuide_Click(object sender, RoutedEventArgs e)
+    {
+        HelpOverlay.Visibility = HelpOverlay.Visibility == Visibility.Visible ? Visibility.Collapsed : Visibility.Visible;
+    }
+
+    private void CloseHelpOverlay_Click(object sender, RoutedEventArgs e)
+    {
+        HelpOverlay.Visibility = Visibility.Collapsed;
+        if (HelpDoNotShowCheck.IsChecked == true)
+        {
+            var settings = App.Services.Settings.Current;
+            settings.ShowFirstRunTips = false;
+            App.Services.Settings.Save(settings);
+            SettingsShowFirstRunTipsCheck.IsChecked = false;
+        }
+    }
+
+    private void SettingsBrowseOutputDir_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new Microsoft.Win32.OpenFolderDialog
+        {
+            Title = "Select Default Output Directory",
+            InitialDirectory = Directory.Exists(SettingsOutputDirBox.Text) ? SettingsOutputDirBox.Text : null
+        };
+
+        if (dialog.ShowDialog(this) == true && !string.IsNullOrWhiteSpace(dialog.FolderName))
+        {
+            SettingsOutputDirBox.Text = dialog.FolderName;
+        }
+    }
+
+    private void SaveSettings_Click(object sender, RoutedEventArgs e)
+    {
+        var settings = App.Services.Settings.Current;
+        var dir = SettingsOutputDirBox.Text.Trim();
+        if (!string.IsNullOrWhiteSpace(dir) && Directory.Exists(dir))
+        {
+            settings.DefaultOutputDirectory = dir;
+            App.Services.Outputs.SetRootDirectory(dir);
+        }
+
+        if (!string.IsNullOrWhiteSpace(SettingsNamingPatternBox.Text))
+        {
+            settings.OutputNamingPattern = SettingsNamingPatternBox.Text.Trim();
+        }
+
+        settings.DefaultValidationLevel = SettingsValidationCombo.SelectedIndex switch
+        {
+            0 => QualityValidationLevel.Basic,
+            1 => QualityValidationLevel.Standard,
+            2 => QualityValidationLevel.Deep,
+            _ => QualityValidationLevel.Standard
+        };
+
+        settings.DefaultPdfDpi = SettingsDpiCombo.SelectedIndex switch
+        {
+            0 => 72,
+            1 => 100,
+            2 => 150,
+            3 => 300,
+            _ => 150
+        };
+
+        settings.DefaultImageQuality = SettingsQualityCombo.SelectedIndex switch
+        {
+            0 => 75,
+            1 => 85,
+            2 => 90,
+            3 => 95,
+            4 => 100,
+            _ => 85
+        };
+
+        settings.MaxConcurrentOperations = SettingsConcurrencyCombo.SelectedIndex switch
+        {
+            0 => 1,
+            1 => 2,
+            2 => 4,
+            3 => 8,
+            _ => 4
+        };
+
+        settings.NotifyOnCompletion = SettingsNotifyOnCompleteCheck.IsChecked == true;
+        settings.ShowFirstRunTips = SettingsShowFirstRunTipsCheck.IsChecked == true;
+
+        App.Services.Settings.Save(settings);
+
+        SettingsStatusText.Text = "Preferences saved successfully.";
+        SettingsStatusText.Visibility = Visibility.Visible;
+    }
+
+    private void ResetSettings_Click(object sender, RoutedEventArgs e)
+    {
+        var defaults = App.Services.Settings.ResetToDefaults();
+        PopulateSettingsUi(defaults);
+        SettingsStatusText.Text = "Preferences reset to default values.";
+        SettingsStatusText.Visibility = Visibility.Visible;
     }
 
     private void CloseRecentFlyout_Click(object sender, RoutedEventArgs e)
@@ -2089,8 +2283,92 @@ public partial class MainWindow : Window
     }
 
     // ==========================================
-    // KEYBOARD NAVIGATION (Section 3.C & 6)
+    // KEYBOARD NAVIGATION & HIERARCHICAL SHORTCUTS
     // ==========================================
+
+    private bool HandleGlobalEscape()
+    {
+        if (HelpOverlay.Visibility == Visibility.Visible)
+        {
+            HelpOverlay.Visibility = Visibility.Collapsed;
+            return true;
+        }
+
+        if (SettingsFlyout.Visibility == Visibility.Visible)
+        {
+            SettingsFlyout.Visibility = Visibility.Collapsed;
+            return true;
+        }
+
+        if (RecentResultsFlyout.Visibility == Visibility.Visible)
+        {
+            RecentResultsFlyout.Visibility = Visibility.Collapsed;
+            return true;
+        }
+
+        if (ImageEditorHost.Visibility == Visibility.Visible)
+        {
+            CloseImageEditor();
+            return true;
+        }
+
+        if (PdfPreviewHost.Visibility == Visibility.Visible)
+        {
+            ClosePdfPreview();
+            return true;
+        }
+
+        if (PresentationStudioHost.Visibility == Visibility.Visible)
+        {
+            ClosePresentationStudio();
+            return true;
+        }
+
+        if (PdfOrganizeStudioHost.Visibility == Visibility.Visible)
+        {
+            ClosePdfOrganizeStudio();
+            return true;
+        }
+
+        if (PdfSplitStudioHost.Visibility == Visibility.Visible)
+        {
+            ClosePdfSplitStudio();
+            return true;
+        }
+
+        if (PdfMergeStudioHost.Visibility == Visibility.Visible)
+        {
+            ClosePdfMergeStudio();
+            return true;
+        }
+
+        if (BatchStudioHost.Visibility == Visibility.Visible)
+        {
+            CloseBatchStudio();
+            return true;
+        }
+
+        if (DocumentBuilderHost.Visibility == Visibility.Visible)
+        {
+            CloseDocumentBuilder();
+            return true;
+        }
+
+        if (DocxWorkspaceHost.Visibility == Visibility.Visible)
+        {
+            DocxWorkspaceHost.Visibility = Visibility.Collapsed;
+            SetDocxWorkspaceActive(false);
+            return true;
+        }
+
+        if (_busy)
+        {
+            CancelAction_Click(this, new RoutedEventArgs());
+            return true;
+        }
+
+        return false;
+    }
 
     private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
     {
@@ -2103,6 +2381,41 @@ public partial class MainWindow : Window
                 e.Handled = true;
             }
             return;
+        }
+
+        // Global Ctrl+O: Open files dialog
+        if (e.Key == Key.O && (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
+        {
+            BrowseFiles_Click(sender, e);
+            e.Handled = true;
+            return;
+        }
+
+        // Global Ctrl+,: Open Settings
+        if (e.Key == Key.OemComma && (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
+        {
+            NavSettings_Click(sender, e);
+            e.Handled = true;
+            return;
+        }
+
+        // Global F1: Help / Onboarding Guide
+        if (e.Key == Key.F1)
+        {
+            HelpGuide_Click(sender, e);
+            e.Handled = true;
+            return;
+        }
+
+        // Global Ctrl+A: Select all queue files
+        if (e.Key == Key.A && (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
+        {
+            if (_files.Count > 0)
+            {
+                FileList.SelectedIndex = 0;
+                e.Handled = true;
+                return;
+            }
         }
 
         // Native Presentation Studio Hotkeys
@@ -2215,8 +2528,10 @@ public partial class MainWindow : Window
 
         if (e.Key == Key.Escape)
         {
-            CancelAction_Click(sender, e);
-            e.Handled = true;
+            if (HandleGlobalEscape())
+            {
+                e.Handled = true;
+            }
         }
     }
 
@@ -4170,7 +4485,7 @@ public partial class MainWindow : Window
         var customName = DocBuilderDocNameBox.Text.Trim();
         if (string.IsNullOrWhiteSpace(customName))
         {
-            customName = "SmartShift-Document";
+            customName = "ZUNO-Document";
         }
 
         var files = _docBuilderFiles.Select(f => f.File).ToList();

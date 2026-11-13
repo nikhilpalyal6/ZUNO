@@ -1,93 +1,130 @@
-# SmartShift
+<p align="center">
+  <img src="src/SmartShift.App/Assets/logo.png" alt="ZUNO Logo" width="128" height="128" />
+</p>
 
-Local-first Windows utility centered around a context-aware radial action menu. Drag files onto the Drop Shelf to inspect them, compress, convert to WebP, resize, and remove metadata locally. Originals are never overwritten.
+<h1 align="center">ZUNO</h1>
 
-## Requirements
+<p align="center">
+  <strong>Universal, Privacy-First Modern File Workspace for Windows</strong><br>
+  <em>Convert, edit, organize, and transform documents and media with zero cloud dependencies.</em>
+</p>
 
-- Windows 10/11
-- .NET SDK 10 (LTS), pinned in `global.json`
+<p align="center">
+  <img src="https://img.shields.io/badge/Platform-Windows%2010%20%7C%2011-0078D6?style=flat-square" alt="Platform" />
+  <img src="https://img.shields.io/badge/.NET-10.0-512BD4?style=flat-square" alt=".NET 10" />
+  <img src="https://img.shields.io/badge/Theme-%23cc4778%20%26%20White-cc4778?style=flat-square" alt="Theme" />
+  <img src="https://img.shields.io/badge/Privacy-100%25%20Local%20%7C%20Zero%20Uploads-success?style=flat-square" alt="Privacy" />
+  <img src="https://img.shields.io/badge/License-MIT-blue?style=flat-square" alt="License" />
+</p>
 
-## Build
+---
+
+## 🌟 Overview
+
+**ZUNO** is a high-performance Windows desktop application built for professionals who need reliable, privacy-first document and media workflows. Designed with a signature **`#cc4778` Berry & Pure White** aesthetic, ZUNO provides an intuitive, non-destructive workspace where your files never leave your machine.
+
+Everything in ZUNO runs **100% locally on your computer**:
+- 🚫 **No cloud uploads**
+- 🚫 **No subscriptions or accounts**
+- 🚫 **No hidden telemetries**
+- 🛡️ **Zero risk to originals** (all writes are collision-safe, atomic, and non-destructive)
+
+---
+
+## ✨ Features & Capabilities
+
+### 1. 🔄 Universal Document Conversion
+Convert between industry-standard document formats with structure preservation:
+- **PDF to Office**: High-fidelity PDF to DOCX and PDF to PPTX conversion.
+- **Office to PDF**: DOCX to PDF and PPTX to PDF rendering.
+- **PDF to Raster Images**: Export PDF pages to PNG, JPEG, and WebP with configurable DPI (72, 100, 150, 300 DPI).
+- **PDF Text Extraction**: Fast, accurate text layout extraction with reading order detection.
+- **Conversion Fidelity & Quality Validator**: Automated pre/post-conversion quality reporting verifying page counts, table structures, and text completeness.
+
+### 2. 📑 Document Editing & Organization
+- **PDF Page Organizer**: Visually reorder, rotate (90° / 180° / 270°), extract, or delete individual pages with instantaneous thumbnail previews.
+- **PDF Splitter**: Split by page ranges, single pages, or bookmarks.
+- **PDF Merger**: Combine multiple PDF files in custom order with atomic output generation.
+- **Watermarking & Metadata**: Non-destructive text watermarking and metadata sanitation.
+
+### 3. 🎨 Interactive Image Studio & Batch Engine
+- **Interactive Editor**: Crop with aspect-ratio locking (Free, 1:1, 4:3, 16:9, Original), 90° rotation, horizontal/vertical flipping, and Mitchell cubic resampling.
+- **Batch Processing**: Convert formats (PNG, JPEG, WebP), strip EXIF/GPS metadata, and batch compress with live multi-file progress tracking.
+- **Multi-Image Document Builder**: Stitch multiple images into clean, standardized multi-page PDF documents or PPTX presentations.
+
+### 4. 📊 Presentation Studio
+- Full-featured deck builder and outline generator for PowerPoint (`.pptx`).
+- Dynamic layout presets (Title, Bullets, Comparison, Showcase, Blank).
+- Cohesive typography and color palettes tailored for executive presentations.
+
+### 5. 🎯 Contextual Radial Action Menu
+- Lightning-fast radial wheel orbiting your active file.
+- Action hotkeys (`1` through `7`) for muscle-memory productivity.
+- Instant keyboard shortcuts (`Ctrl+O` to open, `Ctrl+,` for preferences, `F1` for quick help, `Enter` to run, `Esc` to cancel).
+
+---
+
+## 🎨 Design Philosophy
+
+ZUNO breaks away from generic dark neon AI themes with a fresh, focused interface:
+- **Berry Accent (`#cc4778`)**: Balanced, energetic accent color used for primary actions, focus rings, and status indicators.
+- **Crisp Light Surfaces**: High-contrast, clean surfaces (`#FFFFFF` and `#F8F9FA`) with slate typography (`#0F172A`) ensuring readability.
+- **Smooth Feedback**: Responsive transitions, informative hover states, and clear quality diagnostics.
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+- **Operating System**: Windows 10 (version 1809+) or Windows 11
+- **Runtime**: [.NET 10.0 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
+
+### Building from Source
+
+Clone the repository and build using the .NET CLI:
 
 ```powershell
+# Restore dependencies
 dotnet restore SmartShift.sln
+
+# Build Release binary
 dotnet build SmartShift.sln -c Release
 ```
 
-## Run
+### Running the Application
 
 ```powershell
 dotnet run --project src\SmartShift.App\SmartShift.App.csproj -c Release
 ```
 
-`--diagnostics` shows a Diagnostics button and can open the development window (Phase 0 drop shelf, optional observe-only hook, cursor probe).
+Optional CLI flags:
+- `--diagnostics`: Enables developer diagnostics window and inspection tools.
 
-## Test
+---
 
-```powershell
-dotnet test SmartShift.sln -c Release
-```
+## ⌨️ Keyboard Shortcuts
 
-Live Explorer drag-and-drop is still a **manual** check (`docs/GESTURE_TESTS.md`).
-
-## What works today
-
-- **Radial Action Experience**:
-  - Context-aware circular menu orbiting the center file preview.
-  - Responsive 3-column layout: Left File Shelf, Center Radial Action Workspace, Right Action Details Panel & Result Area.
-  - Dark navy palette (`#0A0F1D`, `#111827`, `#162035`, `#22304E`, `#3B82F6`) with crisp vector SVG icons and subtle radial focus glow.
-  - Full keyboard accessibility: hotkeys `1`–`5` to select radial actions, `Enter` to run, `Esc` to cancel, `Delete` to remove files from queue, and arrow/Tab key navigation.
-- **Left File Shelf**:
-  - Drag-and-drop queue with queue count and recognized count.
-  - 96px decoded thumbnails with format color badges (`JPG`, `PNG`, `WEBP`, `PDF`).
-  - Per-item removal and "Clear queue" action.
-- **Classification**: Fast, deterministic header-sniffing (not extension alone).
-- **Show information**: Header inspection for images and structural inspection for PDFs (page count, dimensions, version, encryption status, title, author, signatures) without writing files.
-- **Compress PDF**:
-  - Re-encodes content streams using optimal Flate/Deflate compression (`PdfFlateEncodeMode.BestCompression`).
-  - Deflates uncompressed streams across the document object graph without destructive rasterization.
-  - Prunes redundant cross-reference tables and unreferenced structural overhead.
-  - Preserves selectable text, vector graphics, embedded fonts, page counts, dimensions, annotations, and bookmarks.
-  - Validates output page count and page dimensions against source specifications before atomic finalization.
-  - Honestly reports actual output size and delta; flags pre-compressed documents when no size reduction occurs.
-- **Compress image**:
-  - JPEG: lossy quality compression (1–100).
-  - PNG: lossless compression (quality maps to zlib effort levels 1–9, transparency preserved).
-  - WebP: lossy (1–99) and lossless (100) compression, transparency preserved.
-- **Convert to WebP**: High-quality WebP conversion from JPEG, PNG, or WebP with alpha preservation.
-- **Resize image**: High-quality Mitchell cubic resampling with aspect-ratio lock, quick dimension presets (50%, 75%, 1080p, 720p), and safety bounds (max 8192px / 40MP).
-- **Remove metadata**: Strips EXIF, GPS, and XMP metadata by re-encoding pixel data into a clean container, baking orientation into pixels first.
-- **Result Area & Size Comparison**:
-  - Displays original vs output size comparison, delta bytes, and percentage reduction badge in teal.
-  - Displays explicit enlargement note in amber if the output is larger than source.
-  - One-click "Open file" (system default viewer) and "Show in folder" (reveals file in File Explorer).
-  - Explicit confirmation that the original file was preserved intact.
-- **Output safety**: Writes new files into `%LOCALAPPDATA%\SmartShift\Output` with collision-safe numbered names (`file (1).ext`). Original files are never touched or modified in place.
-
-## What does not work yet
-
-- **PDF preview**: PDF page rendering / rasterized visual preview requires a dedicated rendering engine (e.g. PDFium) and remains unavailable in Phase 1 (clearly disabled and marked as "Not implemented" in the UI).
-
-## Image & PDF Processing Library Details
-
-- **Image Engine**: SkiaSharp `4.153.1` (backed by Google's Skia 2D graphics engine).
-  - **Licensing**: SkiaSharp is licensed under the MIT License and Skia under the BSD 3-Clause License. This avoids the restrictive commercial obligations and revenue thresholds of the SixLabors ImageSharp Split License.
-  - **Safety limits**: 8,192 px max per dimension, 40,000,000 pixels max decoded image size to prevent memory exhaustion and decompression bombs.
-- **PDF Engine**: PDFsharp `6.1.1` (empira Software GmbH).
-  - **Licensing**: Licensed under the permissive **MIT License**. We explicitly selected version 6.1.1 to avoid the AGPLv3 copyleft obligations and runtime license-key requirements introduced in PDFsharp 6.5.0+, ensuring full closed-source commercial compatibility.
-  - **Preservation & Integrity**: Non-destructive stream and structure compression. Selectable text, vector paths, fonts, and annotations are preserved intact. Digital signatures are detected and flagged (since byte rewriting alters signature ranges). Password-protected files fail cleanly with informative diagnostic feedback.
-
-## Docs
-
-| File | Purpose |
+| Shortcut | Action |
 | --- | --- |
-| `docs/PHASE1.md` | Phase 1 scope, radial UI experience, image processing capabilities, and limits |
-| `docs/OUTPUT_POLICY.md` | Output and original-file safety policy |
-| `docs/PHASE1_PLAN.md` | Implementation plan |
-| `docs/PHASE0_*.md` / `DRAG_DROP_FINDINGS.md` | Phase 0 spike and drag-and-drop findings |
+| `Ctrl + O` | Open file browser to add files |
+| `Ctrl + ,` | Open application preferences / settings |
+| `F1` | Open quick start guide & keyboard reference |
+| `1` – `7` | Select radial action directly |
+| `Enter` | Execute currently selected action |
+| `Delete` | Remove selected file from queue |
+| `Esc` | Cancel ongoing operation or close active overlay |
 
-## Safety & Privacy
+---
 
-- Local only: 100% on-device processing, no network uploads, telemetry, accounts, or cloud dependencies.
-- Non-destructive: Original files are never overwritten, renamed, or modified.
-- No administrator privileges required.
+## 🔒 Safety & Non-Destructive Guarantee
+
+1. **Original Protection**: ZUNO strictly treats all input files as read-only. Source files are never modified, renamed, or overwritten in place.
+2. **Collision-Free Outputs**: All processed outputs are written into dedicated output storage with automatic collision avoidance (`file (1).ext`).
+3. **Atomic Writes**: Files are written to temporary `.partial` files and atomically renamed only upon 100% successful verification, preventing corrupted outputs.
+4. **Offline Isolation**: ZUNO makes zero external network requests. Your sensitive legal, financial, and personal documents never touch the internet.
+
+---
+
+## 📄 License
+
+Licensed under the [MIT License](LICENSE).

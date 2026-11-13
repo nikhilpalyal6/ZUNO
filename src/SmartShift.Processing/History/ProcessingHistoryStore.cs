@@ -22,7 +22,7 @@ public sealed class ProcessingHistoryStore : IProcessingHistoryStore
     {
         _storagePath = storagePath ?? Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "SmartShift",
+            "ZUNO",
             "processing_history.json");
     }
 

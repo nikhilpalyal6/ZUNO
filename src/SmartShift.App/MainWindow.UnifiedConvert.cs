@@ -68,7 +68,7 @@ public partial class MainWindow
             ActionAvailabilityText.Foreground = (Brush)FindResource("DangerBrush");
 
             UnifiedNoTargetsCard.Visibility = Visibility.Visible;
-            UnifiedNoTargetsMessage.Text = $"SmartShift does not support converting {file.DisplayType} files in this version.";
+            UnifiedNoTargetsMessage.Text = $"ZUNO does not support converting {file.DisplayType} files in this version.";
             UnifiedDynamicSettingsHost.Visibility = Visibility.Collapsed;
             RunButton.IsEnabled = false;
             return;

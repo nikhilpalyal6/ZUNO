@@ -66,18 +66,32 @@ public partial class MainWindow : Window
         }
     }
 
-    private void DocxHeroPdf_Click(object sender, RoutedEventArgs e) => SelectDocxTab("pdf");
-    private void DocxHeroPptx_Click(object sender, RoutedEventArgs e) => SelectDocxTab("pptx");
-    private void DocxHeroCompress_Click(object sender, RoutedEventArgs e) => SelectDocxTab("compress");
+    private void DocxHeroPdf_Click(object sender, RoutedEventArgs e)
+    {
+        SelectDocxTab("pdf");
+        DocxRunAction_Click(sender, e);
+    }
+
+    private void DocxHeroPptx_Click(object sender, RoutedEventArgs e)
+    {
+        SelectDocxTab("pptx");
+        DocxRunAction_Click(sender, e);
+    }
+
+    private void DocxHeroCompress_Click(object sender, RoutedEventArgs e)
+    {
+        SelectDocxTab("compress");
+        DocxRunAction_Click(sender, e);
+    }
 
     private void DocxTabPdf_Click(object sender, RoutedEventArgs e) => SelectDocxTab("pdf");
     private void DocxTabPptx_Click(object sender, RoutedEventArgs e) => SelectDocxTab("pptx");
     private void DocxTabCompress_Click(object sender, RoutedEventArgs e) => SelectDocxTab("compress");
-    private async void DocxTabPresentation_Click(object sender, RoutedEventArgs e)
+    private void DocxTabPresentation_Click(object sender, RoutedEventArgs e)
     {
         if (_selectedFileItem is not null && File.Exists(_selectedFileItem.File.Path))
         {
-            await LoadDocumentIntoPresentationStudioAsync(_selectedFileItem.File.Path);
+            OpenPresentationStudio(_selectedFileItem.File);
         }
     }
     private void DocxTabInfo_Click(object sender, RoutedEventArgs e) => SelectDocxTab("info");
@@ -92,6 +106,10 @@ public partial class MainWindow : Window
         SetTabActive(DocxTabCompressBtn, tab == "compress");
         SetTabActive(DocxTabPresentationBtn, tab == "presentation");
         SetTabActive(DocxTabInfoBtn, tab == "info");
+
+        SetTabActive(DocxHeroPdfBtn, tab == "pdf");
+        SetTabActive(DocxHeroPptxBtn, tab == "pptx");
+        SetTabActive(DocxHeroCompressBtn, tab == "compress");
 
         DocxPdfSettingsPanel.Visibility = tab == "pdf" ? Visibility.Visible : Visibility.Collapsed;
         DocxPptxSettingsPanel.Visibility = tab == "pptx" ? Visibility.Visible : Visibility.Collapsed;

@@ -1,7 +1,8 @@
 <Window x:Class="SmartShift.App.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="SmartShift â€” Unified File Workspace"
+        Title="ZUNO — Modern File Workspace"
+        Icon="Assets/logo.png"
         Width="1260"
         Height="820"
         MinWidth="980"
@@ -26,38 +27,50 @@
         <!-- ========================================== -->
         <Border Grid.Row="0" Background="{DynamicResource GlassPanelBrush}"
                 BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,0,1"
-                Padding="16,9">
+                Padding="18,10">
             <DockPanel LastChildFill="False">
                 <!-- Brand Title and Identity -->
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center" DockPanel.Dock="Left">
-                    <!-- Brand Icon with subtle gradient glow -->
-                    <Border Width="34" Height="34" CornerRadius="9" Background="{DynamicResource AccentGradient}" Margin="0,0,12,0">
-                        <Border.Effect>
-                            <DropShadowEffect Color="#EA580C" BlurRadius="12" ShadowDepth="0" Opacity="0.45" />
-                        </Border.Effect>
-                        <Path Data="{StaticResource IconConvertGeometry}" Fill="White" Width="17" Height="17" Stretch="Uniform" />
+                    <Border Width="40" Height="40" CornerRadius="12" Margin="0,0,12,0"
+                            Background="{DynamicResource AccentSoftBrush}">
+                        <Image Source="Assets/logo.png" Width="26" Height="26"
+                               RenderOptions.BitmapScalingMode="HighQuality" HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <Image.Effect>
+                                <DropShadowEffect Color="#CC4778" BlurRadius="10" ShadowDepth="0" Opacity="0.35" />
+                            </Image.Effect>
+                        </Image>
                     </Border>
                     <StackPanel VerticalAlignment="Center">
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                            <TextBlock Text="SmartShift" FontWeight="Bold" FontSize="16" Foreground="{DynamicResource TextBrush}" />
-                            <!-- Local Privacy Indicator Badge -->
-                            <Border Background="{DynamicResource AccentSoftBrush}" BorderBrush="{DynamicResource BorderLightBrush}" BorderThickness="1"
-                                    CornerRadius="5" Padding="7,2" Margin="9,0,0,0" VerticalAlignment="Center">
+                            <TextBlock Text="ZUNO" FontWeight="Black" FontSize="18" Foreground="{DynamicResource TextBrush}" />
+                            <Border Background="{DynamicResource AccentSoftBrush}" BorderBrush="#F7D1DE" BorderThickness="1"
+                                    CornerRadius="999" Padding="8,3" Margin="10,0,0,0" VerticalAlignment="Center">
                                 <StackPanel Orientation="Horizontal">
-                                    <Ellipse Width="6" Height="6" Fill="{DynamicResource OkBrush}" Margin="0,0,5,0" VerticalAlignment="Center" />
-                                    <TextBlock Text="LOCAL" FontSize="9.5" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center" />
+                                    <Ellipse Width="7" Height="7" Fill="{DynamicResource OkBrush}" Margin="0,0,6,0" VerticalAlignment="Center" />
+                                    <TextBlock Text="Local · Private" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center" />
                                 </StackPanel>
                             </Border>
                         </StackPanel>
-                        <TextBlock Text="Your private file workspace Â· Zero cloud uploads" Style="{StaticResource MutedText}" FontSize="11" Margin="0,1,0,0" />
+                        <TextBlock Text="Convert, merge, split and edit files on this PC" Style="{StaticResource MutedText}" FontSize="11" Margin="0,1,0,0" />
                     </StackPanel>
                 </StackPanel>
 
                 <!-- Top Right Utility Actions -->
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                    <!-- Help Guide Button -->
+                    <Button x:Name="HelpGuideButton" Style="{StaticResource GhostButton}" Click="HelpGuide_Click"
+                            ToolTip="Quick Start Guide &amp; Shortcuts (F1)" Margin="0,0,8,0" Padding="8,6"
+                            AutomationProperties.Name="Quick Start Guide (F1)">
+                        <StackPanel Orientation="Horizontal">
+                            <Path Data="{StaticResource IconInfoGeometry}" Fill="{DynamicResource MutedBrush}" Width="13" Height="13" Stretch="Uniform" Margin="0,0,5,0" />
+                            <TextBlock Text="Help (F1)" FontSize="12" />
+                        </StackPanel>
+                    </Button>
+
                     <!-- Browse Files Action -->
                     <Button Style="{StaticResource PrimaryButton}" Click="BrowseFiles_Click"
-                            ToolTip="Browse your computer to add images or PDFs" Margin="0,0,8,0" Padding="14,6">
+                            ToolTip="Browse your computer to add files (Ctrl+O)" Margin="0,0,8,0" Padding="14,6"
+                            AutomationProperties.Name="Browse and add files (Ctrl+O)">
                         <StackPanel Orientation="Horizontal">
                             <Path Data="{StaticResource IconPlusGeometry}" Fill="White" Width="11" Height="11" Stretch="Uniform" Margin="0,0,6,0" />
                             <TextBlock Text="Browse files" FontSize="12" FontWeight="SemiBold" />
@@ -66,7 +79,8 @@
 
                     <!-- Open Output Folder Button -->
                     <Button x:Name="OpenOutputsBtn" Style="{StaticResource SecondaryButton}" Content="Open output folder" Click="OpenOutputs_Click"
-                            ToolTip="Opens the SmartShift output folder in Windows File Explorer" Margin="0,0,8,0">
+                            ToolTip="Opens the ZUNO output folder in Windows File Explorer" Margin="0,0,8,0"
+                            AutomationProperties.Name="Open Output Folder">
                         <Button.ContentTemplate>
                             <DataTemplate>
                                 <StackPanel Orientation="Horizontal">
@@ -136,13 +150,13 @@
 
             <!-- LEFT NAVIGATION SIDEBAR -->
             <Border Grid.Column="0" Background="{DynamicResource GlassSidebarBrush}"
-                    BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,1,0" Padding="8,12">
+                    BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,1,0" Padding="8,14">
                 <DockPanel LastChildFill="False">
                     <!-- Top Navigation Items -->
                     <StackPanel DockPanel.Dock="Top">
                         <!-- Workspace Item -->
                         <Button x:Name="NavWorkspaceBtn" Style="{StaticResource NavSidebarButtonStyle}" Click="NavWorkspace_Click" Tag="Active" Margin="0,0,0,6"
-                                ToolTip="File Workspace &amp; Processing">
+                                ToolTip="File Workspace &amp; Processing" AutomationProperties.Name="File Workspace">
                             <StackPanel Orientation="Horizontal">
                                 <Path Data="{StaticResource IconHomeGeometry}" Fill="{DynamicResource AccentBrush}" Width="16" Height="16" Stretch="Uniform" Margin="2,0,0,0" />
                                 <TextBlock x:Name="NavWorkspaceText" Text="Workspace" Margin="10,0,0,0" VerticalAlignment="Center" FontSize="12.5" Visibility="Collapsed" />
@@ -151,7 +165,7 @@
 
                         <!-- Queue Item -->
                         <Button x:Name="NavQueueBtn" Style="{StaticResource NavSidebarButtonStyle}" Click="NavQueue_Click" Margin="0,0,0,6"
-                                ToolTip="Current Processing Queue">
+                                ToolTip="Current Processing Queue" AutomationProperties.Name="Processing Queue">
                             <Grid>
                                 <StackPanel Orientation="Horizontal">
                                     <Path Data="{StaticResource IconQueueGeometry}" Fill="{DynamicResource MutedBrush}" Width="16" Height="16" Stretch="Uniform" Margin="2,0,0,0" />
@@ -165,7 +179,7 @@
 
                         <!-- Multi-Image Document Builder Nav Item -->
                         <Button x:Name="NavDocBuilderBtn" Style="{StaticResource NavSidebarButtonStyle}" Click="NavDocBuilder_Click" Margin="0,0,0,6"
-                                ToolTip="Document Builder: Images to PDF or PPTX">
+                                ToolTip="Document Builder: Images to PDF or PPTX" AutomationProperties.Name="Document Builder Studio">
                             <StackPanel Orientation="Horizontal">
                                 <Path Data="{StaticResource IconDocumentGeometry}" Fill="{DynamicResource MutedBrush}" Width="16" Height="16" Stretch="Uniform" Margin="2,0,0,0" />
                                 <TextBlock x:Name="NavDocBuilderText" Text="Doc Builder" Margin="10,0,0,0" VerticalAlignment="Center" FontSize="12.5" Visibility="Collapsed" />
@@ -174,7 +188,7 @@
 
                         <!-- Text-to-Presentation Studio Nav Item -->
                         <Button x:Name="NavPresentationBtn" Style="{StaticResource NavSidebarButtonStyle}" Click="NavPresentation_Click" Margin="0,0,0,6"
-                                ToolTip="Presentation Studio: Multi-format document to editable PPTX">
+                                ToolTip="Presentation Studio: Multi-format document to editable PPTX" AutomationProperties.Name="Presentation Studio">
                             <StackPanel Orientation="Horizontal">
                                 <Path Data="{StaticResource IconPresentationGeometry}" Fill="{DynamicResource MutedBrush}" Width="16" Height="16" Stretch="Uniform" Margin="2,0,0,0" />
                                 <TextBlock x:Name="NavPresentationText" Text="Presentations" Margin="10,0,0,0" VerticalAlignment="Center" FontSize="12.5" Visibility="Collapsed" />
@@ -182,7 +196,7 @@
                         </Button>
 
                         <Button x:Name="NavPdfMergeBtn" Style="{StaticResource NavSidebarButtonStyle}" Click="NavPdfMerge_Click" Margin="0,0,0,6"
-                                ToolTip="PDF Merge Studio: Reorder and merge multiple PDF documents">
+                                ToolTip="PDF Merge Studio: Reorder and merge multiple PDF documents" AutomationProperties.Name="PDF Merge Studio">
                             <StackPanel Orientation="Horizontal">
                                 <Path Data="{StaticResource IconExportGeometry}" Fill="{DynamicResource MutedBrush}" Width="16" Height="16" Stretch="Uniform" Margin="2,0,0,0" />
                                 <TextBlock x:Name="NavPdfMergeText" Text="PDF Merge" Margin="10,0,0,0" VerticalAlignment="Center" FontSize="12.5" Visibility="Collapsed" />
@@ -190,7 +204,7 @@
                         </Button>
 
                         <Button x:Name="NavPdfSplitBtn" Style="{StaticResource NavSidebarButtonStyle}" Click="NavPdfSplit_Click" Margin="0,0,0,6"
-                                ToolTip="PDF Split Studio: Extract selected page ranges or split every page">
+                                ToolTip="PDF Split Studio: Extract selected page ranges or split every page" AutomationProperties.Name="PDF Split Studio">
                             <StackPanel Orientation="Horizontal">
                                 <Path Data="{StaticResource IconSplitGeometry}" Fill="{DynamicResource MutedBrush}" Width="16" Height="16" Stretch="Uniform" Margin="2,0,0,0" />
                                 <TextBlock x:Name="NavPdfSplitText" Text="PDF Split" Margin="10,0,0,0" VerticalAlignment="Center" FontSize="12.5" Visibility="Collapsed" />
@@ -198,7 +212,7 @@
                         </Button>
 
                         <Button x:Name="NavPdfOrganizeBtn" Style="{StaticResource NavSidebarButtonStyle}" Click="NavPdfOrganize_Click" Margin="0,0,0,6"
-                                ToolTip="PDF Page Organizer: Reorder, rotate, delete, and organize PDF pages visually">
+                                ToolTip="PDF Page Organizer: Reorder, rotate, delete, and organize PDF pages visually" AutomationProperties.Name="PDF Page Organizer Studio">
                             <StackPanel Orientation="Horizontal">
                                 <Path Data="{StaticResource IconOrganizerGeometry}" Fill="{DynamicResource MutedBrush}" Width="16" Height="16" Stretch="Uniform" Margin="2,0,0,0" />
                                 <TextBlock x:Name="NavPdfOrganizeText" Text="PDF Organizer" Margin="10,0,0,0" VerticalAlignment="Center" FontSize="12.5" Visibility="Collapsed" />
@@ -210,7 +224,7 @@
 
                         <!-- Recent Files / Results -->
                         <Button x:Name="NavRecentBtn" Style="{StaticResource NavSidebarButtonStyle}" Click="NavRecent_Click" Margin="0,0,0,6"
-                                ToolTip="Recent Results (Current Session)">
+                                ToolTip="Recent Results History" AutomationProperties.Name="Recent Results History">
                             <StackPanel Orientation="Horizontal">
                                 <Path Data="{StaticResource IconHistoryGeometry}" Fill="{DynamicResource MutedBrush}" Width="16" Height="16" Stretch="Uniform" Margin="2,0,0,0" />
                                 <TextBlock x:Name="NavRecentText" Text="Recent" Margin="10,0,0,0" VerticalAlignment="Center" FontSize="12.5" Visibility="Collapsed" />
@@ -219,7 +233,7 @@
 
                         <!-- Settings & Privacy -->
                         <Button x:Name="NavSettingsBtn" Style="{StaticResource NavSidebarButtonStyle}" Click="NavSettings_Click"
-                                ToolTip="Settings &amp; Local Engine Status">
+                                ToolTip="Application Preferences &amp; Settings (Ctrl+,)" AutomationProperties.Name="Application Preferences &amp; Settings (Ctrl+,)">
                             <StackPanel Orientation="Horizontal">
                                 <Path Data="{StaticResource IconSettingsGeometry}" Fill="{DynamicResource MutedBrush}" Width="16" Height="16" Stretch="Uniform" Margin="2,0,0,0" />
                                 <TextBlock x:Name="NavSettingsText" Text="Settings" Margin="10,0,0,0" VerticalAlignment="Center" FontSize="12.5" Visibility="Collapsed" />
@@ -243,7 +257,7 @@
             </Border>
 
             <!-- WORKSPACE CONTENT AREA (3 Responsive Columns) -->
-            <Grid Grid.Column="1" Margin="14">
+            <Grid Grid.Column="1" Margin="16">
                 <Grid.ColumnDefinitions>
                     <!-- Column 0: Left File Shelf & Drop Zone -->
                     <ColumnDefinition Width="310" MinWidth="260" MaxWidth="400" />
@@ -252,23 +266,23 @@
                     <!-- Column 2: Center Contextual Action & Preview Workspace -->
                     <ColumnDefinition Width="*" MinWidth="380" />
                     <!-- Splitter -->
-                    <ColumnDefinition Width="10" />
+                    <ColumnDefinition x:Name="WorkspaceRightSplitterColumn" Width="10" />
                     <!-- Column 4: Right Action Settings & Results -->
-                    <ColumnDefinition Width="360" MinWidth="320" MaxWidth="460" />
+                    <ColumnDefinition x:Name="WorkspaceRightPaneColumn" Width="360" MinWidth="320" MaxWidth="460" />
                 </Grid.ColumnDefinitions>
 
                 <!-- ========================================== -->
                 <!-- COLUMN 0: LEFT FILE SHELF                  -->
                 <!-- ========================================== -->
-                <Border Grid.Column="0" Style="{StaticResource Card}" x:Name="DropZone" Padding="12">
+                <Border Grid.Column="0" Style="{StaticResource Card}" x:Name="DropZone" Padding="14">
                     <DockPanel>
                         <!-- Shelf Header -->
                         <DockPanel DockPanel.Dock="Top" Margin="0,0,0,10">
                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                <TextBlock Text="Workspace Files" Style="{StaticResource SectionHeading}" VerticalAlignment="Center" />
-                                <Border x:Name="QueueCountBadge" Background="{DynamicResource SurfaceElevatedBrush}"
-                                        CornerRadius="9" Padding="7,2" Margin="8,0,0,0" VerticalAlignment="Center">
-                                    <TextBlock x:Name="QueueCountText" Text="0 files" FontSize="10.5" FontWeight="SemiBold" Foreground="{DynamicResource MutedBrush}" />
+                                <TextBlock Text="Your files" Style="{StaticResource SectionHeading}" FontSize="15" VerticalAlignment="Center" />
+                                <Border x:Name="QueueCountBadge" Background="{DynamicResource AccentSoftBrush}"
+                                        CornerRadius="999" Padding="8,2" Margin="8,0,0,0" VerticalAlignment="Center">
+                                    <TextBlock x:Name="QueueCountText" Text="0 files" FontSize="10.5" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}" />
                                 </Border>
                             </StackPanel>
 
@@ -288,15 +302,15 @@
 
                         <!-- Shelf Status Subhead -->
                         <TextBlock x:Name="QueueSummary" DockPanel.Dock="Top" Style="{StaticResource MutedText}" Margin="0,0,0,10"
-                                   Text="Drop files to begin." />
+                                   Text="Drop files here to get started." />
 
                         <!-- Compact Drop Cue when files exist -->
-                        <Border x:Name="CompactDropCue" DockPanel.Dock="Top" Background="{DynamicResource GlassCardBrush}"
-                                BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"
-                                CornerRadius="8" Padding="9,7" Margin="0,0,0,10" Visibility="Collapsed">
+                        <Border x:Name="CompactDropCue" DockPanel.Dock="Top" Background="#FDF7FA"
+                                BorderBrush="#F7D1DE" BorderThickness="1"
+                                CornerRadius="12" Padding="10,8" Margin="0,0,0,10" Visibility="Collapsed">
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                <Path Data="{StaticResource IconUploadGeometry}" Fill="{DynamicResource AccentBrush}" Width="12" Height="12" Stretch="Uniform" Margin="0,0,6,0" />
-                                <TextBlock Text="Drop more files to add" FontSize="11" Foreground="{DynamicResource MutedBrush}" />
+                                <Path Data="{StaticResource IconUploadGeometry}" Fill="{DynamicResource AccentBrush}" Width="13" Height="13" Stretch="Uniform" Margin="0,0,7,0" />
+                                <TextBlock Text="Drop more files to add them" FontSize="11.5" FontWeight="SemiBold" Foreground="{DynamicResource AccentBrush}" />
                             </StackPanel>
                         </Border>
 
@@ -323,47 +337,63 @@
                         <!-- Queue List & Empty State Host -->
                         <Grid>
                             <!-- Large Empty State Drop Area -->
-                            <Border x:Name="EmptyState" Background="{DynamicResource GlassCardBrush}"
-                                    BorderBrush="{DynamicResource BorderLightBrush}" BorderThickness="1.5"
-                                    CornerRadius="12" VerticalAlignment="Center" HorizontalAlignment="Stretch" Margin="0,10">
-                                <StackPanel HorizontalAlignment="Center" Margin="14,24">
-                                    <Border Background="{DynamicResource AccentSoftBrush}" CornerRadius="6" Padding="10,4" Margin="0,0,0,12" HorizontalAlignment="Center">
-                                        <TextBlock Text="DROP FILES" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}" />
-                                    </Border>
-                                    <TextBlock Text="Drop files here" FontSize="15" FontWeight="SemiBold" TextAlignment="Center" Margin="0,0,0,4" />
-                                    <TextBlock Text="Drag images or PDFs from Explorer."
-                                               Style="{StaticResource MutedText}" TextAlignment="Center" Margin="0,0,0,14" />
+                            <Border x:Name="EmptyState" Background="#FDF7FA"
+                                    BorderBrush="Transparent" BorderThickness="0"
+                                    CornerRadius="16" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Margin="0,4">
+                                <Grid>
+                                    <Rectangle Stroke="{DynamicResource AccentBrush}" StrokeThickness="1.6"
+                                               StrokeDashArray="7 5" RadiusX="16" RadiusY="16" Opacity="0.45"
+                                               Fill="Transparent" IsHitTestVisible="False" />
+                                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Margin="16,24">
+                                        <Border Width="56" Height="56" CornerRadius="18" Background="White" Margin="0,0,0,14"
+                                                BorderBrush="#F7D1DE" BorderThickness="1" HorizontalAlignment="Center">
+                                            <Border.Effect>
+                                                <DropShadowEffect Color="#CC4778" BlurRadius="16" ShadowDepth="0" Opacity="0.22" />
+                                            </Border.Effect>
+                                            <Path Data="{StaticResource IconUploadGeometry}" Fill="{DynamicResource AccentBrush}"
+                                                  Width="22" Height="22" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                        </Border>
+                                        <TextBlock Text="Drop files here" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextBrush}" TextAlignment="Center" Margin="0,0,0,4" />
+                                        <TextBlock Text="PDF, Office, images — originals stay untouched"
+                                                   Style="{StaticResource MutedText}" TextAlignment="Center" Margin="0,0,0,14" FontSize="11.5" />
 
-                                    <!-- Browse Files Button inside Drop Zone -->
-                                    <Button Style="{StaticResource PrimaryButton}" Click="BrowseFiles_Click" HorizontalAlignment="Center" Padding="16,7" Margin="0,0,0,16">
-                                        <TextBlock Text="Browse Files" FontSize="12" FontWeight="SemiBold" />
-                                    </Button>
+                                        <Button Style="{StaticResource PrimaryButton}" Click="BrowseFiles_Click" HorizontalAlignment="Center" Padding="16,8" Margin="0,0,0,14"
+                                                ToolTip="Select files from your computer (Ctrl+O)" AutomationProperties.Name="Browse Files (Ctrl+O)">
+                                            <StackPanel Orientation="Horizontal">
+                                                <Path Data="{StaticResource IconPlusGeometry}" Fill="White" Width="11" Height="11" Stretch="Uniform" Margin="0,0,6,0" />
+                                                <TextBlock Text="Browse files" FontSize="12.5" FontWeight="SemiBold" />
+                                            </StackPanel>
+                                        </Button>
 
-                                    <!-- Supported File Type Badges -->
-                                    <WrapPanel HorizontalAlignment="Center">
-                                        <Border Background="#162238" CornerRadius="4" Padding="6,2.5" Margin="2">
-                                            <TextBlock Text="PNG" FontSize="9.5" FontWeight="Bold" Foreground="#60A5FA" />
-                                        </Border>
-                                        <Border Background="#162238" CornerRadius="4" Padding="6,2.5" Margin="2">
-                                            <TextBlock Text="JPEG" FontSize="9.5" FontWeight="Bold" Foreground="#FBBF24" />
-                                        </Border>
-                                        <Border Background="#162238" CornerRadius="4" Padding="6,2.5" Margin="2">
-                                            <TextBlock Text="WEBP" FontSize="9.5" FontWeight="Bold" Foreground="#34D399" />
-                                        </Border>
-                                        <Border Background="#162238" CornerRadius="4" Padding="6,2.5" Margin="2">
-                                            <TextBlock Text="PDF" FontSize="9.5" FontWeight="Bold" Foreground="#F87171" />
-                                        </Border>
-                                    </WrapPanel>
-                                    <TextBlock Text="Original files are never overwritten." FontSize="10" Foreground="{DynamicResource SubtleBrush}" TextAlignment="Center" Margin="0,12,0,0" />
-                                </StackPanel>
+                                        <WrapPanel HorizontalAlignment="Center">
+                                            <Border Background="#FDF0F5" BorderBrush="#F7D1DE" BorderThickness="1" CornerRadius="999" Padding="8,3" Margin="3">
+                                                <TextBlock Text="PDF" FontSize="10" FontWeight="Bold" Foreground="#CC4778" />
+                                            </Border>
+                                            <Border Background="#EFF6FF" BorderBrush="#DBEAFE" BorderThickness="1" CornerRadius="999" Padding="8,3" Margin="3">
+                                                <TextBlock Text="DOCX" FontSize="10" FontWeight="Bold" Foreground="#2563EB" />
+                                            </Border>
+                                            <Border Background="#FFF7ED" BorderBrush="#FFEDD5" BorderThickness="1" CornerRadius="999" Padding="8,3" Margin="3">
+                                                <TextBlock Text="PPTX" FontSize="10" FontWeight="Bold" Foreground="#EA580C" />
+                                            </Border>
+                                            <Border Background="#F0FDF4" BorderBrush="#DCFCE7" BorderThickness="1" CornerRadius="999" Padding="8,3" Margin="3">
+                                                <TextBlock Text="PNG / JPG" FontSize="10" FontWeight="Bold" Foreground="#16A34A" />
+                                            </Border>
+                                            <Border Background="#FAF5FF" BorderBrush="#F3E8FF" BorderThickness="1" CornerRadius="999" Padding="8,3" Margin="3">
+                                                <TextBlock Text="WEBP" FontSize="10" FontWeight="Bold" Foreground="#9333EA" />
+                                            </Border>
+                                        </WrapPanel>
+                                        <TextBlock Text="Ctrl+O to browse · files never leave this PC" FontSize="10.5" Foreground="{DynamicResource SubtleBrush}" TextAlignment="Center" Margin="0,12,0,0" />
+                                    </StackPanel>
+                                </Grid>
                             </Border>
 
                             <!-- File List -->
-                            <ListBox x:Name="FileList" Visibility="Collapsed" SelectionChanged="FileList_SelectionChanged">
+                            <ListBox x:Name="FileList" Visibility="Collapsed" SelectionChanged="FileList_SelectionChanged"
+                                     AutomationProperties.Name="File Queue List">
                                 <ListBox.ItemTemplate>
                                     <DataTemplate>
                                         <Border Background="{DynamicResource GlassCardBrush}" BorderBrush="{DynamicResource BorderBrush}"
-                                                BorderThickness="1" CornerRadius="8" Padding="9" Margin="0,0,0,6">
+                                                BorderThickness="1" CornerRadius="12" Padding="10" Margin="0,0,0,2">
                                             <Grid>
                                                 <Grid.ColumnDefinitions>
                                                     <!-- Real Thumbnail / Vector Icon -->
@@ -438,32 +468,117 @@
                 <Border Grid.Column="2" Style="{StaticResource Card}" Padding="0" ClipToBounds="True">
                     <Grid x:Name="RadialWorkspaceHost">
                         <!-- Warm sunset aura behind radial petal wheel -->
-                        <Ellipse Width="540" Height="540" IsHitTestVisible="False" Opacity="0.18"
+                        <Ellipse Width="620" Height="620" IsHitTestVisible="False" Opacity="0.22"
                                  HorizontalAlignment="Center" VerticalAlignment="Center">
                             <Ellipse.Fill>
-                                <RadialGradientBrush Center="0.5,0.5" GradientOrigin="0.5,0.5" RadiusX="0.5" RadiusY="0.5">
-                                    <GradientStop Color="#F97316" Offset="0" />
-                                    <GradientStop Color="#EA580C" Offset="0.45" />
-                                    <GradientStop Color="#00EA580C" Offset="1" />
+                                <RadialGradientBrush Center="0.5,0.42" GradientOrigin="0.5,0.38" RadiusX="0.55" RadiusY="0.55">
+                                    <GradientStop Color="#CC4778" Offset="0" />
+                                    <GradientStop Color="#F4A6C1" Offset="0.38" />
+                                    <GradientStop Color="#00FFFFFF" Offset="1" />
                                 </RadialGradientBrush>
                             </Ellipse.Fill>
                         </Ellipse>
 
-                        <!-- When No File Selected: Guidance State -->
+                        <!-- When No File Selected: Interactive command center -->
                         <Border x:Name="EmptyRadialPlaceholder" HorizontalAlignment="Center" VerticalAlignment="Center"
-                                Visibility="Visible" MaxWidth="440" Background="{DynamicResource GlassCardBrush}"
-                                BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="14" Padding="32,36">
-                            <StackPanel HorizontalAlignment="Center">
-                                <Border Background="{DynamicResource AccentSoftBrush}" BorderBrush="{DynamicResource BorderLightBrush}" BorderThickness="1"
-                                        CornerRadius="6" Padding="12,4" HorizontalAlignment="Center" Margin="0,0,0,16">
-                                    <TextBlock Text="WORKSPACE READY" FontSize="10.5" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}" />
-                                </Border>
-                                <TextBlock Text="Unified File Workspace" FontSize="20" FontWeight="Bold" TextAlignment="Center" Foreground="{DynamicResource TextBrush}" Margin="0,0,0,8" />
-                                <TextBlock Text="Select a file from the shelf on the left or drop an image or PDF to inspect properties and run local operations."
-                                           Style="{StaticResource MutedText}" TextAlignment="Center" TextWrapping="Wrap" LineHeight="20" Margin="0,0,0,22" />
-                                <Button Style="{StaticResource PrimaryButton}" Click="BrowseFiles_Click" HorizontalAlignment="Center" Padding="20,9">
-                                    <TextBlock Text="Browse Files to Start" FontSize="12.5" FontWeight="SemiBold" />
+                                Visibility="Visible" MaxWidth="560" Background="#F2FFFFFF"
+                                BorderBrush="#F7D1DE" BorderThickness="1" CornerRadius="22" Padding="28,26">
+                            <Border.Effect>
+                                <DropShadowEffect Color="#CC4778" BlurRadius="36" ShadowDepth="8" Direction="270" Opacity="0.12" />
+                            </Border.Effect>
+                            <StackPanel>
+                                <DockPanel LastChildFill="False" Margin="0,0,0,16">
+                                    <Border DockPanel.Dock="Left" Background="{DynamicResource AccentSoftBrush}" BorderBrush="#F7D1DE" BorderThickness="1"
+                                            CornerRadius="999" Padding="12,4" VerticalAlignment="Center">
+                                        <TextBlock Text="READY" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}" />
+                                    </Border>
+                                    <TextBlock DockPanel.Dock="Right" Text="Ctrl+O  ·  F1 help" FontSize="11" Foreground="{DynamicResource SubtleBrush}" VerticalAlignment="Center" />
+                                </DockPanel>
+                                <TextBlock Text="What do you want to do?" FontSize="24" FontWeight="Bold" Foreground="{DynamicResource TextBrush}" Margin="0,0,0,6" />
+                                <TextBlock Text="Drop files on the left, or jump into a studio. Everything runs locally."
+                                           Style="{StaticResource MutedText}" TextWrapping="Wrap" LineHeight="20" Margin="0,0,0,16" />
+
+                                <Button Style="{StaticResource PrimaryButton}" Click="BrowseFiles_Click" HorizontalAlignment="Left" Padding="18,9" Margin="0,0,0,18">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Path Data="{StaticResource IconPlusGeometry}" Fill="White" Width="12" Height="12" Stretch="Uniform" Margin="0,0,8,0" />
+                                        <TextBlock Text="Add files to the workspace" FontSize="13" FontWeight="SemiBold" />
+                                    </StackPanel>
                                 </Button>
+
+                                <UniformGrid Columns="2" Rows="3">
+                                    <Button Style="{StaticResource QuickStartTileStyle}" Click="BrowseFiles_Click" Margin="0,0,6,8"
+                                            ToolTip="Add a file and convert it to another format">
+                                        <StackPanel Orientation="Horizontal">
+                                            <Border Width="36" Height="36" CornerRadius="10" Background="#FDF0F5" Margin="0,0,10,0">
+                                                <Path Data="{StaticResource IconConvertGeometry}" Fill="#CC4778" Width="16" Height="16" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                            </Border>
+                                            <StackPanel VerticalAlignment="Center">
+                                                <TextBlock Text="Convert" FontWeight="SemiBold" FontSize="13" />
+                                                <TextBlock Text="PDF, Office, images" FontSize="11" Foreground="{DynamicResource MutedBrush}" />
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </Button>
+                                    <Button Style="{StaticResource QuickStartTileStyle}" Click="NavPdfMerge_Click" Margin="6,0,0,8"
+                                            ToolTip="Open PDF Merge Studio">
+                                        <StackPanel Orientation="Horizontal">
+                                            <Border Width="36" Height="36" CornerRadius="10" Background="#EFF6FF" Margin="0,0,10,0">
+                                                <Path Data="{StaticResource IconExportGeometry}" Fill="#2563EB" Width="16" Height="16" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                            </Border>
+                                            <StackPanel VerticalAlignment="Center">
+                                                <TextBlock Text="Merge PDFs" FontWeight="SemiBold" FontSize="13" />
+                                                <TextBlock Text="Combine documents" FontSize="11" Foreground="{DynamicResource MutedBrush}" />
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </Button>
+                                    <Button Style="{StaticResource QuickStartTileStyle}" Click="NavPdfSplit_Click" Margin="0,0,6,8"
+                                            ToolTip="Open PDF Split Studio">
+                                        <StackPanel Orientation="Horizontal">
+                                            <Border Width="36" Height="36" CornerRadius="10" Background="#FFF7ED" Margin="0,0,10,0">
+                                                <Path Data="{StaticResource IconSplitGeometry}" Fill="#EA580C" Width="16" Height="16" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                            </Border>
+                                            <StackPanel VerticalAlignment="Center">
+                                                <TextBlock Text="Split PDF" FontWeight="SemiBold" FontSize="13" />
+                                                <TextBlock Text="Pages or ranges" FontSize="11" Foreground="{DynamicResource MutedBrush}" />
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </Button>
+                                    <Button Style="{StaticResource QuickStartTileStyle}" Click="NavPdfOrganize_Click" Margin="6,0,0,8"
+                                            ToolTip="Open PDF Page Organizer">
+                                        <StackPanel Orientation="Horizontal">
+                                            <Border Width="36" Height="36" CornerRadius="10" Background="#F0FDF4" Margin="0,0,10,0">
+                                                <Path Data="{StaticResource IconOrganizerGeometry}" Fill="#16A34A" Width="16" Height="16" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                            </Border>
+                                            <StackPanel VerticalAlignment="Center">
+                                                <TextBlock Text="Organize pages" FontWeight="SemiBold" FontSize="13" />
+                                                <TextBlock Text="Reorder, rotate, delete" FontSize="11" Foreground="{DynamicResource MutedBrush}" />
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </Button>
+                                    <Button Style="{StaticResource QuickStartTileStyle}" Click="NavDocBuilder_Click" Margin="0,0,6,0"
+                                            ToolTip="Build a PDF or PPTX from images">
+                                        <StackPanel Orientation="Horizontal">
+                                            <Border Width="36" Height="36" CornerRadius="10" Background="#EEF2FF" Margin="0,0,10,0">
+                                                <Path Data="{StaticResource IconImageGeometry}" Fill="#4F46E5" Width="16" Height="16" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                            </Border>
+                                            <StackPanel VerticalAlignment="Center">
+                                                <TextBlock Text="Images to PDF" FontWeight="SemiBold" FontSize="13" />
+                                                <TextBlock Text="Or a slide deck" FontSize="11" Foreground="{DynamicResource MutedBrush}" />
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </Button>
+                                    <Button Style="{StaticResource QuickStartTileStyle}" Click="NavPresentation_Click" Margin="6,0,0,0"
+                                            ToolTip="Open Presentation Studio">
+                                        <StackPanel Orientation="Horizontal">
+                                            <Border Width="36" Height="36" CornerRadius="10" Background="#FAF5FF" Margin="0,0,10,0">
+                                                <Path Data="{StaticResource IconPresentationGeometry}" Fill="#9333EA" Width="16" Height="16" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                            </Border>
+                                            <StackPanel VerticalAlignment="Center">
+                                                <TextBlock Text="Presentations" FontWeight="SemiBold" FontSize="13" />
+                                                <TextBlock Text="From documents" FontSize="11" Foreground="{DynamicResource MutedBrush}" />
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </Button>
+                                </UniformGrid>
                             </StackPanel>
                         </Border>
 
@@ -519,7 +634,7 @@
                                     </Button>
 
                                     <!-- Hotkey hint -->
-                                    <TextBlock DockPanel.Dock="Right" Text="Press 1â€“7 to select action" FontSize="11" Foreground="{DynamicResource SubtleBrush}"
+                                    <TextBlock DockPanel.Dock="Right" Text="Press 1-7 to pick an action" FontSize="11" Foreground="{DynamicResource SubtleBrush}"
                                                VerticalAlignment="Center" Margin="0,0,14,0" />
 
                                     <!-- File Info & Specs -->
@@ -549,31 +664,31 @@
                                       IsHitTestVisible="False" />
 
                                 <!-- Outer Framing Track -->
-                                <Ellipse x:Name="OrbitalRing" Stroke="#40FDE68A"
+                                <Ellipse x:Name="OrbitalRing" Stroke="{DynamicResource BorderBrush}"
                                          StrokeThickness="1" IsHitTestVisible="False" />
 
-                                <!-- Inner Concentric Hub Rim (Golden Amber Specular Rim) -->
-                                <Ellipse x:Name="InnerOrbitalRing" Stroke="#B3F59E0B"
+                                <!-- Inner Concentric Hub Rim -->
+                                <Ellipse x:Name="InnerOrbitalRing" Stroke="{DynamicResource AccentBrush}"
                                          StrokeThickness="2" IsHitTestVisible="False" />
 
                                 <!-- Ambient Breathing Halo behind Center Core -->
-                                <Ellipse x:Name="CenterCoreHalo" IsHitTestVisible="False" Opacity="0.32">
+                                <Ellipse x:Name="CenterCoreHalo" IsHitTestVisible="False" Opacity="0.22">
                                     <Ellipse.Fill>
                                         <RadialGradientBrush Center="0.5,0.5" GradientOrigin="0.5,0.5" RadiusX="0.5" RadiusY="0.5">
-                                            <GradientStop Color="#80F97316" Offset="0" />
-                                            <GradientStop Color="#40EA580C" Offset="0.5" />
+                                            <GradientStop Color="#80CC4778" Offset="0" />
+                                            <GradientStop Color="#33E05A8B" Offset="0.5" />
                                             <GradientStop Color="#00000000" Offset="1" />
                                         </RadialGradientBrush>
                                     </Ellipse.Fill>
                                     <Ellipse.Effect>
-                                        <DropShadowEffect Color="#EA580C" BlurRadius="36" ShadowDepth="0" Opacity="0.65" />
+                                        <DropShadowEffect Color="#CC4778" BlurRadius="30" ShadowDepth="0" Opacity="0.35" />
                                     </Ellipse.Effect>
                                     <Ellipse.Triggers>
                                         <EventTrigger RoutedEvent="Loaded">
                                             <BeginStoryboard>
                                                 <Storyboard RepeatBehavior="Forever" AutoReverse="True">
                                                     <DoubleAnimation Storyboard.TargetProperty="Opacity"
-                                                                     From="0.22" To="0.52" Duration="0:0:2.4">
+                                                                     From="0.15" To="0.35" Duration="0:0:2.4">
                                                         <DoubleAnimation.EasingFunction>
                                                             <SineEase EasingMode="EaseInOut" />
                                                         </DoubleAnimation.EasingFunction>
@@ -586,13 +701,13 @@
 
                                 <!-- Center Selected File Viewport Container (Smart Core - Mathematically Circular) -->
                                 <Border x:Name="CenterPreviewContainer"
-                                        Background="#E6111827"
-                                        BorderBrush="#80F59E0B"
+                                        Background="{DynamicResource SurfaceBrush}"
+                                        BorderBrush="{DynamicResource BorderBrush}"
                                         BorderThickness="2"
                                         CornerRadius="105"
                                         ClipToBounds="True">
                                     <Border.Effect>
-                                        <DropShadowEffect Color="#000000" BlurRadius="28" ShadowDepth="4" Opacity="0.75" />
+                                        <DropShadowEffect Color="#000000" BlurRadius="20" ShadowDepth="2" Opacity="0.08" />
                                     </Border.Effect>
                                     <Border.OpacityMask>
                                         <RadialGradientBrush Center="0.5,0.5" GradientOrigin="0.5,0.5" RadiusX="0.5" RadiusY="0.5">
@@ -606,19 +721,19 @@
 
                                         <!-- Center PDF / Document Placeholder -->
                                         <StackPanel x:Name="CenterDocumentPlaceholder" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed" MaxWidth="180">
-                                            <Border x:Name="CenterDocIconBorder" Width="50" Height="50" CornerRadius="12" Background="{DynamicResource DangerSoftBrush}"
-                                                    BorderBrush="{DynamicResource DangerBrush}" BorderThickness="1"
+                                            <Border x:Name="CenterDocIconBorder" Width="50" Height="50" CornerRadius="12" Background="{DynamicResource AccentSoftBrush}"
+                                                    BorderBrush="{DynamicResource AccentBrush}" BorderThickness="1"
                                                     Margin="0,0,0,8" HorizontalAlignment="Center">
-                                                <Path x:Name="CenterDocIconPath" Data="{StaticResource IconPdfGeometry}" Fill="{DynamicResource DangerBrush}" Width="26" Height="26" Stretch="Uniform" />
+                                                <Path x:Name="CenterDocIconPath" Data="{StaticResource IconPdfGeometry}" Fill="{DynamicResource AccentBrush}" Width="26" Height="26" Stretch="Uniform" />
                                             </Border>
                                             <TextBlock x:Name="CenterDocFormat" Text="PDF Document" FontWeight="Bold" FontSize="13.5" TextAlignment="Center" TextTrimming="CharacterEllipsis" />
                                             <TextBlock x:Name="CenterDocVersion" Text="%PDF-1.7" Style="{StaticResource MutedText}" FontSize="11" TextAlignment="Center" Margin="0,2,0,0" TextWrapping="Wrap" />
                                         </StackPanel>
 
                                         <!-- Top Format Pill Floating Inside Core -->
-                                        <Border Background="#E6080C14" BorderBrush="#80F59E0B" BorderThickness="1"
+                                        <Border Background="{DynamicResource SurfaceAltBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"
                                                 CornerRadius="8" Padding="9,3" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,14,0,0">
-                                            <TextBlock x:Name="CenterPreviewLabel" Text="Source Preview" FontSize="10" FontWeight="SemiBold" Foreground="#FDE68A" />
+                                            <TextBlock x:Name="CenterPreviewLabel" Text="Source Preview" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource AccentBrush}" />
                                         </Border>
 
                                         <!-- Bottom Active Action Status Capsule Inside Core -->
@@ -718,7 +833,7 @@
                                         </Border>
                                         <StackPanel VerticalAlignment="Center">
                                             <StackPanel Orientation="Horizontal" Margin="0,0,0,2">
-                                                <TextBlock x:Name="DocxHeaderFileName" Text="Document.docx" FontWeight="Bold" FontSize="13.5" Foreground="{DynamicResource TextBrush}" Margin="0,0,8,0" />
+                                                <TextBlock x:Name="DocxHeaderFileName" Text="Document.docx" FontWeight="Bold" FontSize="13.5" Foreground="{DynamicResource TextBrush}" Margin="0,0,8,0" TextTrimming="CharacterEllipsis" MaxWidth="360" />
                                                 <Border Background="{DynamicResource AccentSoftBrush}" CornerRadius="4" Padding="5,1" Margin="0,0,6,0">
                                                     <TextBlock Text="DOCX" FontSize="9.5" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}" />
                                                 </Border>
@@ -736,10 +851,10 @@
                             <Grid Grid.Row="1">
                                 <Grid.ColumnDefinitions>
                                     <!-- Left: Structured Document Content Preview -->
-                                    <ColumnDefinition Width="3*" MinWidth="320" />
+                                    <ColumnDefinition Width="3*" MinWidth="340" />
                                     <ColumnDefinition Width="6" />
                                     <!-- Right: Document Actions & Settings Panel -->
-                                    <ColumnDefinition Width="2*" MinWidth="280" MaxWidth="440" />
+                                    <ColumnDefinition Width="2*" MinWidth="320" MaxWidth="480" />
                                 </Grid.ColumnDefinitions>
 
                                 <!-- Left Column: Document Preview -->
@@ -799,12 +914,12 @@
                                                                     <ItemsControl ItemsSource="{Binding Blocks}">
                                                                         <ItemsControl.ItemTemplate>
                                                                             <DataTemplate>
-                                                                                <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                                                                                    <TextBlock Text="•" Margin="4,0,8,0" Foreground="{DynamicResource MutedBrush}"
-                                                                                               Visibility="{Binding BulletVisibility}" />
+                                                                                <DockPanel Margin="0,0,0,5" LastChildFill="True">
+                                                                                    <TextBlock DockPanel.Dock="Left" Text="•" Margin="4,0,8,0" Foreground="{DynamicResource MutedBrush}"
+                                                                                               Visibility="{Binding BulletVisibility}" VerticalAlignment="Top" />
                                                                                     <TextBlock Text="{Binding Text}" TextWrapping="Wrap" Style="{StaticResource MutedText}"
                                                                                                Foreground="{DynamicResource TextBrush}" FontSize="11.5" LineHeight="16" />
-                                                                                </StackPanel>
+                                                                                </DockPanel>
                                                                             </DataTemplate>
                                                                         </ItemsControl.ItemTemplate>
                                                                     </ItemsControl>
@@ -926,8 +1041,8 @@
                                             </StackPanel>
 
                                             <!-- Run Action Button -->
-                                            <Button x:Name="DocxRunActionBtn" Style="{StaticResource PrimaryButton}" Padding="14,10" Margin="0,0,0,12" Click="DocxRunAction_Click">
-                                                <TextBlock x:Name="DocxRunActionBtnText" Text="Convert to PDF" FontSize="12.5" FontWeight="Bold" />
+                                            <Button x:Name="DocxRunActionBtn" Style="{StaticResource PrimaryButton}" Padding="14,10" Margin="0,4,0,14" Click="DocxRunAction_Click" HorizontalAlignment="Stretch">
+                                                <TextBlock x:Name="DocxRunActionBtnText" Text="Convert to PDF" FontSize="12.5" FontWeight="Bold" HorizontalAlignment="Center" />
                                             </Button>
 
                                             <!-- Progress Indicator -->
@@ -1018,14 +1133,14 @@
                             <!-- Viewport ScrollViewer -->
                             <ScrollViewer Grid.Row="1" x:Name="PdfPreviewScrollViewer"
                                           HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"
-                                          Background="#080C14" SizeChanged="PdfPreviewScrollViewer_SizeChanged">
+                                          Background="{DynamicResource WindowBgBrush}" SizeChanged="PdfPreviewScrollViewer_SizeChanged">
                                 <Grid HorizontalAlignment="Center" VerticalAlignment="Center" Margin="24">
                                     <!-- Paper Sheet Card -->
                                     <Border x:Name="PdfPageContainer" Background="White"
-                                            BorderBrush="#334155" BorderThickness="1" CornerRadius="3"
+                                            BorderBrush="#D1D5DB" BorderThickness="1" CornerRadius="3"
                                             HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <Border.Effect>
-                                            <DropShadowEffect BlurRadius="20" ShadowDepth="6" Direction="270" Color="#000000" Opacity="0.5" />
+                                            <DropShadowEffect BlurRadius="18" ShadowDepth="4" Direction="270" Color="#000000" Opacity="0.15" />
                                         </Border.Effect>
                                         <Image x:Name="PdfPreviewImage" Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality" />
                                     </Border>
@@ -1056,25 +1171,59 @@
                 </Border>
 
                 <!-- Grid Splitter -->
-                <GridSplitter Grid.Column="3" HorizontalAlignment="Stretch" Background="Transparent" />
+                <GridSplitter x:Name="WorkspaceRightSplitter" Grid.Column="3" HorizontalAlignment="Stretch" Background="Transparent" />
 
                 <!-- ========================================== -->
                 <!-- COLUMN 4: RIGHT ACTION DETAILS & RESULTS   -->
                 <!-- ========================================== -->
-                <Border Grid.Column="4" Style="{StaticResource Card}" Padding="16">
+                <Border x:Name="WorkspaceRightPaneBorder" Grid.Column="4" Style="{StaticResource Card}" Padding="16">
                     <ScrollViewer VerticalScrollBarVisibility="Auto">
                         <StackPanel>
                             <!-- No Action Selected View -->
-                            <Border x:Name="NoActionPlaceholder" Visibility="Visible" Margin="0,20"
-                                    Background="{DynamicResource GlassCardBrush}" BorderBrush="{DynamicResource BorderBrush}"
-                                    BorderThickness="1" CornerRadius="12" Padding="20,24">
-                                <StackPanel HorizontalAlignment="Center">
-                                    <Border Background="{DynamicResource AccentSoftBrush}" CornerRadius="5" Padding="8,3" HorizontalAlignment="Center" Margin="0,0,0,12">
-                                        <TextBlock Text="CONFIGURATION" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}" />
-                                    </Border>
-                                    <TextBlock Text="Action Settings" FontSize="15" FontWeight="SemiBold" TextAlignment="Center" Foreground="{DynamicResource TextBrush}" Margin="0,0,0,6" />
-                                    <TextBlock Text="Select an action from the deck or press keys 1â€“7 to configure parameters."
-                                               Style="{StaticResource MutedText}" TextAlignment="Center" TextWrapping="Wrap" LineHeight="18" />
+                            <Border x:Name="NoActionPlaceholder" Visibility="Visible" Margin="0,4"
+                                    Background="#FDF7FA" BorderBrush="#F7D1DE"
+                                    BorderThickness="1" CornerRadius="16" Padding="18,20">
+                                <StackPanel>
+                                    <TextBlock Text="How it works" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextBrush}" Margin="0,0,0,6" />
+                                    <TextBlock Text="Add a file, pick an action, then tune options here before you run."
+                                               Style="{StaticResource MutedText}" TextWrapping="Wrap" LineHeight="18" Margin="0,0,0,16" />
+
+                                    <StackPanel Margin="0,0,0,14">
+                                        <DockPanel Margin="0,0,0,10">
+                                            <Border DockPanel.Dock="Left" Width="26" Height="26" CornerRadius="13" Background="{DynamicResource AccentGradient}" Margin="0,0,10,0">
+                                                <TextBlock Text="1" Foreground="White" FontWeight="Bold" FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                            </Border>
+                                            <TextBlock Text="Drop or browse files into the shelf" VerticalAlignment="Center" FontSize="12.5" TextWrapping="Wrap" />
+                                        </DockPanel>
+                                        <DockPanel Margin="0,0,0,10">
+                                            <Border DockPanel.Dock="Left" Width="26" Height="26" CornerRadius="13" Background="{DynamicResource AccentGradient}" Margin="0,0,10,0">
+                                                <TextBlock Text="2" Foreground="White" FontWeight="Bold" FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                            </Border>
+                                            <TextBlock Text="Choose convert, merge, split, or edit" VerticalAlignment="Center" FontSize="12.5" TextWrapping="Wrap" />
+                                        </DockPanel>
+                                        <DockPanel>
+                                            <Border DockPanel.Dock="Left" Width="26" Height="26" CornerRadius="13" Background="{DynamicResource AccentGradient}" Margin="0,0,10,0">
+                                                <TextBlock Text="3" Foreground="White" FontWeight="Bold" FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                            </Border>
+                                            <TextBlock Text="Run locally — originals stay put" VerticalAlignment="Center" FontSize="12.5" TextWrapping="Wrap" />
+                                        </DockPanel>
+                                    </StackPanel>
+
+                                    <TextBlock Text="Shortcuts" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource MutedBrush}" Margin="0,4,0,8" />
+                                    <WrapPanel>
+                                        <Border Style="{StaticResource ShortcutChip}">
+                                            <TextBlock FontSize="11"><Run FontWeight="Bold" Foreground="{DynamicResource TextBrush}">Ctrl+O</Run><Run Foreground="{DynamicResource MutedBrush}"> browse</Run></TextBlock>
+                                        </Border>
+                                        <Border Style="{StaticResource ShortcutChip}">
+                                            <TextBlock FontSize="11"><Run FontWeight="Bold" Foreground="{DynamicResource TextBrush}">1-7</Run><Run Foreground="{DynamicResource MutedBrush}"> actions</Run></TextBlock>
+                                        </Border>
+                                        <Border Style="{StaticResource ShortcutChip}">
+                                            <TextBlock FontSize="11"><Run FontWeight="Bold" Foreground="{DynamicResource TextBrush}">F1</Run><Run Foreground="{DynamicResource MutedBrush}"> help</Run></TextBlock>
+                                        </Border>
+                                        <Border Style="{StaticResource ShortcutChip}">
+                                            <TextBlock FontSize="11"><Run FontWeight="Bold" Foreground="{DynamicResource TextBrush}">Esc</Run><Run Foreground="{DynamicResource MutedBrush}"> close preview</Run></TextBlock>
+                                        </Border>
+                                    </WrapPanel>
                                 </StackPanel>
                             </Border>
 
@@ -1165,7 +1314,7 @@
 
                                                 <TextBlock x:Name="UnifiedNoTargetsMessage" Style="{StaticResource MutedText}" FontSize="11" TextAlignment="Center" TextWrapping="Wrap"
 
-                                                           Text="SmartShift does not support converting this file format yet." />
+                                                           Text="ZUNO does not support converting this file format yet." />
 
                                             </StackPanel>
 
@@ -1413,11 +1562,11 @@
                                                 <TextBlock Text="Interactive Image Studio" FontWeight="SemiBold" FontSize="12.5" Margin="0,0,0,6" />
                                                 <TextBlock Text="Crop, rotate, flip, and resize in an interactive canvas with instant visual feedback."
                                                            Style="{StaticResource MutedText}" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,8" />
-                                                <TextBlock Text="â€¢ Interactive crop rectangle with aspect-ratio locking (Free, 1:1, 4:3, 16:9, Original)" Style="{StaticResource MutedText}" FontSize="11" Margin="0,0,0,3" />
-                                                <TextBlock Text="â€¢ 90Â° Clockwise &amp; Counterclockwise rotation and flipping" Style="{StaticResource MutedText}" FontSize="11" Margin="0,0,0,3" />
-                                                <TextBlock Text="â€¢ Dimension-accurate Mitchell cubic resampling" Style="{StaticResource MutedText}" FontSize="11" Margin="0,0,0,3" />
-                                                <TextBlock Text="â€¢ Non-destructive in-memory workflow with Reset All" Style="{StaticResource MutedText}" FontSize="11" Margin="0,0,0,3" />
-                                                <TextBlock Text="â€¢ Collision-safe export following SmartShift output policy" Style="{StaticResource MutedText}" FontSize="11" />
+                                                <TextBlock Text="• Interactive crop rectangle with aspect-ratio locking (Free, 1:1, 4:3, 16:9, Original)" Style="{StaticResource MutedText}" FontSize="11" Margin="0,0,0,3" />
+                                                <TextBlock Text="• 90° Clockwise &amp; Counterclockwise rotation and flipping" Style="{StaticResource MutedText}" FontSize="11" Margin="0,0,0,3" />
+                                                <TextBlock Text="• Dimension-accurate Mitchell cubic resampling" Style="{StaticResource MutedText}" FontSize="11" Margin="0,0,0,3" />
+                                                <TextBlock Text="• Non-destructive in-memory workflow with Reset All" Style="{StaticResource MutedText}" FontSize="11" Margin="0,0,0,3" />
+                                                <TextBlock Text="• Collision-safe export following ZUNO output policy" Style="{StaticResource MutedText}" FontSize="11" />
                                             </StackPanel>
                                         </Border>
 
@@ -1467,7 +1616,7 @@
                                     <!-- PDF Compression Options View -->
                                     <StackPanel x:Name="PdfCompressOptionsView" Visibility="Collapsed">
                                         <TextBlock Text="Target Output Size" FontWeight="SemiBold" FontSize="12" Margin="0,0,0,4" />
-                                        <TextBlock Text="Set a desired goal for the compressed document. SmartShift preserves full layout, text, and vector graphics."
+                                        <TextBlock Text="Set a desired goal for the compressed document. ZUNO preserves full layout, text, and vector graphics."
                                                    Style="{StaticResource MutedText}" FontSize="11.5" Margin="0,0,0,8" TextWrapping="Wrap" />
 
                                         <!-- Target Size Presets -->
@@ -1516,7 +1665,7 @@
                                             </StackPanel>
                                         </Border>
 
-                                        <TextBlock Text="Note: Target size is a goal. SmartShift never corrupts or rasterizes text to force a file under size."
+                                        <TextBlock Text="Note: Target size is a goal. ZUNO never corrupts or rasterizes text to force a file under size."
                                                    Style="{StaticResource MutedText}" FontSize="11" FontStyle="Italic" TextWrapping="Wrap" Margin="0,0,0,6" />
                                     </StackPanel>
 
@@ -1725,7 +1874,8 @@
 
                                 <!-- Action Execution Buttons -->
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
-                                    <Button x:Name="RunButton" Style="{StaticResource PrimaryButton}" Click="RunAction_Click">
+                                    <Button x:Name="RunButton" Style="{StaticResource PrimaryButton}" Click="RunAction_Click"
+                                            ToolTip="Execute the selected action (Enter)" AutomationProperties.Name="Run selected action (Enter)">
                                         <Button.ContentTemplate>
                                             <DataTemplate>
                                                 <StackPanel Orientation="Horizontal">
@@ -1736,7 +1886,8 @@
                                         </Button.ContentTemplate>
                                     </Button>
 
-                                    <Button x:Name="CancelButton" Style="{StaticResource SecondaryButton}" Click="CancelAction_Click">
+                                    <Button x:Name="CancelButton" Style="{StaticResource SecondaryButton}" Click="CancelAction_Click"
+                                            ToolTip="Cancel active operation (Esc)" AutomationProperties.Name="Cancel active operation (Esc)">
                                         <Button.ContentTemplate>
                                             <DataTemplate>
                                                 <AccessText Text="Cancel" />
@@ -1878,7 +2029,7 @@
 
                                     <!-- Save / Export Result Button -->
                                     <Button DockPanel.Dock="Right" Style="{StaticResource PrimaryButton}" Click="EditorSaveExport_Click"
-                                            Padding="16,7" Margin="10,0,0,0" ToolTip="Apply edits and save to SmartShift output directory">
+                                            Padding="16,7" Margin="10,0,0,0" ToolTip="Apply edits and save to ZUNO output directory">
                                         <StackPanel Orientation="Horizontal">
                                             <Path Data="{StaticResource IconCheckGeometry}" Fill="White" Width="12" Height="12" Stretch="Uniform" Margin="0,0,6,0" />
                                             <TextBlock Text="Save Image" FontWeight="Bold" FontSize="12" />
@@ -2038,7 +2189,7 @@
                                 </Border>
 
                                 <!-- Center Canvas Viewport: Expansive Canvas -->
-                                <Canvas Grid.Column="1" x:Name="EditorViewportCanvas" Background="#080C14" ClipToBounds="True"
+                                <Canvas Grid.Column="1" x:Name="EditorViewportCanvas" Background="{DynamicResource WindowBgBrush}" ClipToBounds="True"
                                         SizeChanged="EditorViewportCanvas_SizeChanged"
                                         MouseDown="EditorViewportCanvas_MouseDown"
                                         MouseMove="EditorViewportCanvas_MouseMove"
@@ -2049,15 +2200,15 @@
                                     <Image x:Name="EditorPreviewImage" Stretch="None" RenderOptions.BitmapScalingMode="HighQuality" />
 
                                     <!-- Exclusion Mask: 4 semi-transparent black overlays -->
-                                    <Rectangle x:Name="CropMaskTop" Fill="#A0000000" IsHitTestVisible="False" />
-                                    <Rectangle x:Name="CropMaskBottom" Fill="#A0000000" IsHitTestVisible="False" />
-                                    <Rectangle x:Name="CropMaskLeft" Fill="#A0000000" IsHitTestVisible="False" />
-                                    <Rectangle x:Name="CropMaskRight" Fill="#A0000000" IsHitTestVisible="False" />
+                                    <Rectangle x:Name="CropMaskTop" Fill="#66000000" IsHitTestVisible="False" />
+                                    <Rectangle x:Name="CropMaskBottom" Fill="#66000000" IsHitTestVisible="False" />
+                                    <Rectangle x:Name="CropMaskLeft" Fill="#66000000" IsHitTestVisible="False" />
+                                    <Rectangle x:Name="CropMaskRight" Fill="#66000000" IsHitTestVisible="False" />
 
                                     <!-- Selected Crop Box -->
                                     <Border x:Name="CropSelectionBox" BorderBrush="{DynamicResource AccentBrush}" BorderThickness="2"
-                                            Background="#0DFFFFFF" Cursor="SizeAll">
-                                        <!-- Golden Grid Rule of Thirds Lines -->
+                                            Background="#0DCC4778" Cursor="SizeAll">
+                                        <!-- Clean Grid Rule of Thirds Lines -->
                                         <Grid IsHitTestVisible="False" Opacity="0.35">
                                             <Grid.RowDefinitions>
                                                 <RowDefinition Height="*" />
@@ -2069,31 +2220,31 @@
                                                 <ColumnDefinition Width="*" />
                                                 <ColumnDefinition Width="*" />
                                             </Grid.ColumnDefinitions>
-                                            <Border Grid.Row="0" Grid.ColumnSpan="3" BorderBrush="#FDE68A" BorderThickness="0,0,0,1" />
-                                            <Border Grid.Row="1" Grid.ColumnSpan="3" BorderBrush="#FDE68A" BorderThickness="0,0,0,1" />
-                                            <Border Grid.RowSpan="3" Grid.Column="0" BorderBrush="#FDE68A" BorderThickness="0,0,1,0" />
-                                            <Border Grid.RowSpan="3" Grid.Column="1" BorderBrush="#FDE68A" BorderThickness="0,0,1,0" />
+                                            <Border Grid.Row="0" Grid.ColumnSpan="3" BorderBrush="{DynamicResource AccentBrush}" BorderThickness="0,0,0,1" />
+                                            <Border Grid.Row="1" Grid.ColumnSpan="3" BorderBrush="{DynamicResource AccentBrush}" BorderThickness="0,0,0,1" />
+                                            <Border Grid.RowSpan="3" Grid.Column="0" BorderBrush="{DynamicResource AccentBrush}" BorderThickness="0,0,1,0" />
+                                            <Border Grid.RowSpan="3" Grid.Column="1" BorderBrush="{DynamicResource AccentBrush}" BorderThickness="0,0,1,0" />
                                         </Grid>
                                     </Border>
 
                                     <!-- 8 Resize Handles -->
-                                    <Border x:Name="HandleTopLeft" Width="10" Height="10" CornerRadius="2" Background="#EA580C" BorderBrush="White" BorderThickness="1.5" Cursor="SizeNWSE" />
-                                    <Border x:Name="HandleTop" Width="10" Height="10" CornerRadius="2" Background="#EA580C" BorderBrush="White" BorderThickness="1.5" Cursor="SizeNS" />
-                                    <Border x:Name="HandleTopRight" Width="10" Height="10" CornerRadius="2" Background="#EA580C" BorderBrush="White" BorderThickness="1.5" Cursor="SizeNESW" />
-                                    <Border x:Name="HandleRight" Width="10" Height="10" CornerRadius="2" Background="#EA580C" BorderBrush="White" BorderThickness="1.5" Cursor="SizeWE" />
-                                    <Border x:Name="HandleBottomRight" Width="10" Height="10" CornerRadius="2" Background="#EA580C" BorderBrush="White" BorderThickness="1.5" Cursor="SizeNWSE" />
-                                    <Border x:Name="HandleBottom" Width="10" Height="10" CornerRadius="2" Background="#EA580C" BorderBrush="White" BorderThickness="1.5" Cursor="SizeNS" />
-                                    <Border x:Name="HandleBottomLeft" Width="10" Height="10" CornerRadius="2" Background="#EA580C" BorderBrush="White" BorderThickness="1.5" Cursor="SizeNESW" />
-                                    <Border x:Name="HandleLeft" Width="10" Height="10" CornerRadius="2" Background="#EA580C" BorderBrush="White" BorderThickness="1.5" Cursor="SizeWE" />
+                                    <Border x:Name="HandleTopLeft" Width="10" Height="10" CornerRadius="2" Background="{DynamicResource AccentBrush}" BorderBrush="White" BorderThickness="1.5" Cursor="SizeNWSE" />
+                                    <Border x:Name="HandleTop" Width="10" Height="10" CornerRadius="2" Background="{DynamicResource AccentBrush}" BorderBrush="White" BorderThickness="1.5" Cursor="SizeNS" />
+                                    <Border x:Name="HandleTopRight" Width="10" Height="10" CornerRadius="2" Background="{DynamicResource AccentBrush}" BorderBrush="White" BorderThickness="1.5" Cursor="SizeNESW" />
+                                    <Border x:Name="HandleRight" Width="10" Height="10" CornerRadius="2" Background="{DynamicResource AccentBrush}" BorderBrush="White" BorderThickness="1.5" Cursor="SizeWE" />
+                                    <Border x:Name="HandleBottomRight" Width="10" Height="10" CornerRadius="2" Background="{DynamicResource AccentBrush}" BorderBrush="White" BorderThickness="1.5" Cursor="SizeNWSE" />
+                                    <Border x:Name="HandleBottom" Width="10" Height="10" CornerRadius="2" Background="{DynamicResource AccentBrush}" BorderBrush="White" BorderThickness="1.5" Cursor="SizeNS" />
+                                    <Border x:Name="HandleBottomLeft" Width="10" Height="10" CornerRadius="2" Background="{DynamicResource AccentBrush}" BorderBrush="White" BorderThickness="1.5" Cursor="SizeNESW" />
+                                    <Border x:Name="HandleLeft" Width="10" Height="10" CornerRadius="2" Background="{DynamicResource AccentBrush}" BorderBrush="White" BorderThickness="1.5" Cursor="SizeWE" />
 
                                     <!-- Floating Dimensions Capsule -->
-                                    <Border x:Name="CropDimensionsBadge" Background="#E6080C14" BorderBrush="{DynamicResource AccentBrush}" BorderThickness="1"
+                                    <Border x:Name="CropDimensionsBadge" Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource AccentBrush}" BorderThickness="1"
                                             CornerRadius="10" Padding="8,3" IsHitTestVisible="False">
-                                        <TextBlock x:Name="CropBadgeText" Text="1280 Ã— 720 px" Foreground="#FDE68A" FontSize="10.5" FontWeight="Bold" />
+                                        <TextBlock x:Name="CropBadgeText" Text="1280 Ã— 720 px" Foreground="{DynamicResource AccentBrush}" FontSize="10.5" FontWeight="Bold" />
                                     </Border>
 
                                     <!-- Loading / Processing Overlay -->
-                                    <Border x:Name="EditorProcessingOverlay" Background="#B3080C14" Visibility="Collapsed">
+                                    <Border x:Name="EditorProcessingOverlay" Background="#80FFFFFF" Visibility="Collapsed">
                                         <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                                             <ProgressBar Width="120" Height="4" IsIndeterminate="True" Foreground="{DynamicResource AccentGradient}" Background="{DynamicResource SurfaceAltBrush}" Margin="0,0,0,10" />
                                             <TextBlock x:Name="EditorProcessingText" Text="Processingâ€¦" Foreground="{DynamicResource TextBrush}" FontSize="12" HorizontalAlignment="Center" />
@@ -2134,7 +2285,7 @@
                                     <!-- Right Action Buttons -->
                                     <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" HorizontalAlignment="Right">
                                         <Button Style="{StaticResource SecondaryButton}" Click="OpenOutputs_Click"
-                                                Padding="12,6" Margin="0,0,8,0" ToolTip="Open the SmartShift output directory in Windows Explorer">
+                                                Padding="12,6" Margin="0,0,8,0" ToolTip="Open the ZUNO output directory in Windows Explorer">
                                             <StackPanel Orientation="Horizontal">
                                                 <Path Data="{StaticResource IconFolderGeometry}" Fill="{DynamicResource MutedBrush}" Width="12" Height="12" Stretch="Uniform" Margin="0,0,6,0" />
                                                 <TextBlock Text="Open Outputs" FontSize="11.5" FontWeight="SemiBold" />
@@ -2362,7 +2513,7 @@
                                                     BorderThickness="1" CornerRadius="10" Padding="14" Margin="0,0,0,14">
                                                 <StackPanel>
                                                     <TextBlock Text="Document Output Name" FontWeight="SemiBold" FontSize="12" Margin="0,0,0,6" />
-                                                    <TextBox x:Name="DocBuilderDocNameBox" Text="SmartShift-Document" Margin="0,0,0,6" />
+                                                    <TextBox x:Name="DocBuilderDocNameBox" Text="ZUNO-Document" Margin="0,0,0,6" />
                                                     <TextBlock Text="Collision-safe naming guarantees no existing file is overwritten." Style="{StaticResource MutedText}" FontSize="10" TextWrapping="Wrap" />
                                                 </StackPanel>
                                             </Border>
@@ -2489,7 +2640,7 @@
                                                     BorderThickness="1" CornerRadius="10" Padding="14" Visibility="Collapsed">
                                                 <StackPanel>
                                                     <TextBlock Text="Document Created Successfully!" FontWeight="Bold" Foreground="{DynamicResource OkBrush}" FontSize="12.5" Margin="0,0,0,4" />
-                                                    <TextBlock x:Name="DocBuilderResultPathText" Text="C:\Outputs\SmartShift-Document.pdf" FontSize="11" Foreground="{DynamicResource TextBrush}" TextWrapping="Wrap" Margin="0,0,0,10" />
+                                                    <TextBlock x:Name="DocBuilderResultPathText" Text="C:\Outputs\ZUNO-Document.pdf" FontSize="11" Foreground="{DynamicResource TextBrush}" TextWrapping="Wrap" Margin="0,0,0,10" />
                                                     <StackPanel Orientation="Horizontal">
                                                         <Button Style="{StaticResource PrimaryButton}" Content="Open File" Click="DocBuilderOpenResult_Click" Padding="10,5" Margin="0,0,6,0" FontSize="11" />
                                                         <Button Style="{StaticResource SecondaryButton}" Content="Show in Folder" Click="DocBuilderRevealResult_Click" Padding="10,5" FontSize="11" />
@@ -2532,7 +2683,7 @@
 
                                     <!-- Right: Open Output Folder -->
                                     <Button DockPanel.Dock="Right" Style="{StaticResource SecondaryButton}" Click="OpenOutputs_Click"
-                                            Padding="12,6" Margin="8,0,0,0" ToolTip="Open the SmartShift output directory in Windows Explorer">
+                                            Padding="12,6" Margin="8,0,0,0" ToolTip="Open the ZUNO output directory in Windows Explorer">
                                         <StackPanel Orientation="Horizontal">
                                             <Path Data="{StaticResource IconFolderGeometry}" Fill="{DynamicResource MutedBrush}" Width="12" Height="12" Stretch="Uniform" Margin="0,0,6,0" />
                                             <TextBlock Text="Open Outputs" FontSize="11.5" FontWeight="SemiBold" />
@@ -2861,7 +3012,7 @@
                                                         BorderThickness="1" CornerRadius="8" Padding="12,10">
                                                     <StackPanel>
                                                         <TextBlock Text="Output Location" FontWeight="SemiBold" FontSize="11.5" Margin="0,0,0,4" />
-                                                        <TextBlock Text="SmartShift\Outputs" Foreground="{DynamicResource AccentBrush}" FontWeight="SemiBold" FontSize="11" />
+                                                        <TextBlock Text="ZUNO\Outputs" Foreground="{DynamicResource AccentBrush}" FontWeight="SemiBold" FontSize="11" />
                                                         <TextBlock Text="Atomic .partial writes, collision-free naming" Style="{StaticResource MutedText}" FontSize="10" Margin="0,2,0,0" />
                                                     </StackPanel>
                                                 </Border>
@@ -3185,7 +3336,7 @@
                                         </Border>
 
                                         <!-- Preview Viewport -->
-                                        <ScrollViewer Grid.Row="1" x:Name="PdfMergePreviewScrollViewer" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" Background="#080C14">
+                                        <ScrollViewer Grid.Row="1" x:Name="PdfMergePreviewScrollViewer" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" Background="{DynamicResource WindowBgBrush}">
                                             <Grid MinHeight="260">
                                                 <Border x:Name="PdfMergePageContainer" Background="White" Margin="16" HorizontalAlignment="Center" VerticalAlignment="Center">
                                                     <Image x:Name="PdfMergePreviewImage" Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality" />
@@ -4186,14 +4337,14 @@
                                                 </DockPanel>
 
                                                 <!-- LIVE WYSIWYG SLIDE CANVAS CONTAINER -->
-                                                <Border x:Name="PresSlideCanvasOuterBorder" Background="#080C14" BorderBrush="{DynamicResource BorderBrush}"
+                                                <Border x:Name="PresSlideCanvasOuterBorder" Background="{DynamicResource WindowBgBrush}" BorderBrush="{DynamicResource BorderBrush}"
                                                         BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,0,0,14" HorizontalAlignment="Center">
                                                     <Border.Effect>
-                                                        <DropShadowEffect Color="#000000" BlurRadius="20" ShadowDepth="4" Opacity="0.5" />
+                                                        <DropShadowEffect Color="#000000" BlurRadius="16" ShadowDepth="2" Opacity="0.08" />
                                                     </Border.Effect>
 
                                                     <!-- Exact aspect-ratio canvas box (default 640x360 for 16:9) -->
-                                                    <Border x:Name="PresSlidePreviewBox" Width="640" Height="360" CornerRadius="4" ClipToBounds="True" Background="#080C14" Padding="24">
+                                                    <Border x:Name="PresSlidePreviewBox" Width="640" Height="360" CornerRadius="4" ClipToBounds="True" Background="#FFFFFF" Padding="24">
                                                         <Grid x:Name="PresSlidePreviewContentGrid">
                                                             <Grid.RowDefinitions>
                                                                 <RowDefinition Height="Auto" />
@@ -4221,8 +4372,8 @@
                                                                         <ItemsControl.ItemTemplate>
                                                                             <DataTemplate>
                                                                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
-                                                                                    <TextBlock Text="â€¢" Foreground="#EA580C" FontWeight="Bold" FontSize="12" Margin="0,0,8,0" />
-                                                                                    <TextBlock Text="{Binding}" Foreground="#F9FAFB" FontSize="11.5" TextWrapping="Wrap" />
+                                                                                    <TextBlock Text="â€¢" Foreground="#CC4778" FontWeight="Bold" FontSize="12" Margin="0,0,8,0" />
+                                                                                    <TextBlock Text="{Binding}" Foreground="#0F172A" FontSize="11.5" TextWrapping="Wrap" />
                                                                                 </StackPanel>
                                                                             </DataTemplate>
                                                                         </ItemsControl.ItemTemplate>
@@ -4235,8 +4386,8 @@
                                                                         <ItemsControl.ItemTemplate>
                                                                             <DataTemplate>
                                                                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
-                                                                                    <TextBlock Text="â€¢" Foreground="#EA580C" FontWeight="Bold" FontSize="12" Margin="0,0,8,0" />
-                                                                                    <TextBlock Text="{Binding}" Foreground="#F9FAFB" FontSize="11.5" TextWrapping="Wrap" />
+                                                                                    <TextBlock Text="â€¢" Foreground="#CC4778" FontWeight="Bold" FontSize="12" Margin="0,0,8,0" />
+                                                                                    <TextBlock Text="{Binding}" Foreground="#0F172A" FontSize="11.5" TextWrapping="Wrap" />
                                                                                 </StackPanel>
                                                                             </DataTemplate>
                                                                         </ItemsControl.ItemTemplate>
@@ -4305,7 +4456,7 @@
                                                 <!-- Theme Section -->
                                                 <TextBlock Text="THEME SELECTION" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}" Margin="0,0,0,6" />
                                                 <StackPanel Margin="0,0,0,14">
-                                                    <Button x:Name="PresThemeDarkSlateBtn" Style="{StaticResource PrimaryButton}" Content="Dark Slate (SmartShift)" Click="PresTheme_Click" Tag="Dark Slate" Padding="8,4" Margin="0,0,0,4" HorizontalContentAlignment="Left" FontSize="11" />
+                                                    <Button x:Name="PresThemeDarkSlateBtn" Style="{StaticResource PrimaryButton}" Content="Berry Dark (ZUNO)" Click="PresTheme_Click" Tag="Dark Slate" Padding="8,4" Margin="0,0,0,4" HorizontalContentAlignment="Left" FontSize="11" />
                                                     <Button x:Name="PresThemeModernMinimalBtn" Style="{StaticResource SecondaryButton}" Content="Modern Minimal (Light)" Click="PresTheme_Click" Tag="Modern Minimal" Padding="8,4" Margin="0,0,0,4" HorizontalContentAlignment="Left" FontSize="11" />
                                                     <Button x:Name="PresThemeClassicNavyBtn" Style="{StaticResource SecondaryButton}" Content="Classic Navy" Click="PresTheme_Click" Tag="Classic Navy" Padding="8,4" Margin="0,0,0,4" HorizontalContentAlignment="Left" FontSize="11" />
                                                     <Button x:Name="PresThemeVibrantSunsetBtn" Style="{StaticResource SecondaryButton}" Content="Vibrant Sunset" Click="PresTheme_Click" Tag="Vibrant Sunset" Padding="8,4" Margin="0,0,0,4" HorizontalContentAlignment="Left" FontSize="11" />
@@ -4340,10 +4491,10 @@
 
                                                 <!-- Color Overrides -->
                                                 <TextBlock Text="Background Color (Hex)" Style="{StaticResource MutedText}" FontSize="10.5" Margin="0,0,0,2" />
-                                                <TextBox x:Name="PresBgColorBox" Text="#080C14" Margin="0,0,0,6" FontSize="11" TextChanged="PresColorBox_TextChanged" />
+                                                <TextBox x:Name="PresBgColorBox" Text="#FFFFFF" Margin="0,0,0,6" FontSize="11" TextChanged="PresColorBox_TextChanged" />
 
                                                 <TextBlock Text="Accent Color (Hex)" Style="{StaticResource MutedText}" FontSize="10.5" Margin="0,0,0,2" />
-                                                <TextBox x:Name="PresAccentColorBox" Text="#EA580C" Margin="0,0,0,14" FontSize="11" TextChanged="PresColorBox_TextChanged" />
+                                                <TextBox x:Name="PresAccentColorBox" Text="#CC4778" Margin="0,0,0,14" FontSize="11" TextChanged="PresColorBox_TextChanged" />
 
                                                 <!-- Source Provenance Card -->
                                                 <Border x:Name="PresProvenanceCard" Background="{DynamicResource GlassCardBrush}" BorderBrush="{DynamicResource BorderBrush}"
@@ -4658,58 +4809,317 @@
         </Border>
 
         <!-- ========================================== -->
-        <!-- SIDEBAR FLYOUT: SETTINGS & PRIVACY         -->
+        <!-- SIDEBAR FLYOUT: SETTINGS & PREFERENCES     -->
         <!-- ========================================== -->
         <Border x:Name="SettingsFlyout" Grid.Row="1" Grid.RowSpan="2"
                 Background="{DynamicResource GlassPanelBrush}" BorderBrush="{DynamicResource BorderBrush}"
                 BorderThickness="1" CornerRadius="12" Margin="70,10,20,20" Padding="20"
-                HorizontalAlignment="Left" VerticalAlignment="Top" Width="420" Visibility="Collapsed">
+                HorizontalAlignment="Left" VerticalAlignment="Top" Width="480" MaxHeight="720" Visibility="Collapsed">
             <Border.Effect>
                 <DropShadowEffect BlurRadius="24" ShadowDepth="8" Direction="270" Color="#000000" Opacity="0.6" />
             </Border.Effect>
-            <StackPanel>
-                <DockPanel Margin="0,0,0,14">
-                    <Button DockPanel.Dock="Right" Style="{StaticResource GhostButton}" Click="CloseSettingsFlyout_Click" Padding="4">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <!-- Header -->
+                <DockPanel Grid.Row="0" Margin="0,0,0,14">
+                    <Button DockPanel.Dock="Right" Style="{StaticResource GhostButton}" Click="CloseSettingsFlyout_Click" Padding="4"
+                            ToolTip="Close Settings (Esc)" AutomationProperties.Name="Close Settings">
                         <Path Data="{StaticResource IconCloseGeometry}" Fill="{DynamicResource MutedBrush}" Width="10" Height="10" Stretch="Uniform" />
                     </Button>
-                    <TextBlock Text="Settings &amp; Architecture" Style="{StaticResource SectionHeading}" />
+                    <StackPanel>
+                        <TextBlock Text="Application Preferences" Style="{StaticResource SectionHeading}" />
+                        <TextBlock Text="Local defaults, conversion parameters &amp; execution rules" Style="{StaticResource MutedText}" FontSize="11" Margin="0,2,0,0" />
+                    </StackPanel>
                 </DockPanel>
-                <!-- Privacy Guarantee -->
-                <Border Background="{DynamicResource OkBgBrush}" BorderBrush="{DynamicResource OkBrush}" BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,0,0,12">
+
+                <!-- Scrollable Content -->
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="0,0,-8,0" Padding="0,0,8,0">
                     <StackPanel>
-                        <TextBlock Text="100% Local-First Guarantee" FontWeight="Bold" Foreground="{DynamicResource OkBrush}" Margin="0,0,0,4" />
-                        <TextBlock Text="All document and image operations are executed directly on your local hardware. No files, logs, or metrics leave your device."
-                                   Style="{StaticResource MutedText}" FontSize="11.5" />
+                        <!-- 100% Local-First Guarantee -->
+                        <Border Background="{DynamicResource OkBgBrush}" BorderBrush="{DynamicResource OkBrush}" BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,0,0,14">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                    <Ellipse Width="7" Height="7" Fill="{DynamicResource OkBrush}" Margin="0,0,6,0" VerticalAlignment="Center" />
+                                    <TextBlock Text="100% Local-First Guarantee" FontWeight="Bold" Foreground="{DynamicResource OkBrush}" />
+                                </StackPanel>
+                                <TextBlock Text="All document transformations, OCR/text extractions, and quality validations execute purely on local hardware. Zero telemetry, tracking, or cloud APIs."
+                                           Style="{StaticResource MutedText}" FontSize="11" TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Group: Output Directory & Naming -->
+                        <TextBlock Text="OUTPUT MANAGEMENT" Style="{StaticResource MutedText}" FontSize="10.5" FontWeight="Bold" Margin="0,0,0,6" />
+                        <Border Background="{DynamicResource GlassCardBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,0,0,14">
+                            <StackPanel>
+                                <TextBlock Text="Default Output Directory" FontWeight="SemiBold" FontSize="11.5" Margin="0,0,0,4" />
+                                <Grid Margin="0,0,0,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox x:Name="SettingsOutputDirBox" Grid.Column="0" IsReadOnly="True" Margin="0,0,6,0" FontSize="11" VerticalContentAlignment="Center" />
+                                    <Button Grid.Column="1" Style="{StaticResource SecondaryButton}" Content="Browseâ€¦" Click="SettingsBrowseOutputDir_Click" Padding="10,4"
+                                            ToolTip="Choose custom output directory" AutomationProperties.Name="Browse custom output directory" />
+                                </Grid>
+                                <Button Style="{StaticResource GhostButton}" Content="Open Current Outputs Folder" Click="OpenOutputs_Click" HorizontalAlignment="Left" Padding="0,4" Margin="0,0,0,8" />
+
+                                <TextBlock Text="Output Naming Template" FontWeight="SemiBold" FontSize="11.5" Margin="0,4,0,4" />
+                                <TextBox x:Name="SettingsNamingPatternBox" Margin="0,0,0,4" FontSize="11" />
+                                <TextBlock Text="Placeholders: {name}, {action}, {timestamp}" Style="{StaticResource MutedText}" FontSize="10" />
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Group: Quality & Conversion Defaults -->
+                        <TextBlock Text="CONVERSION &amp; FIDELITY DEFAULTS" Style="{StaticResource MutedText}" FontSize="10.5" FontWeight="Bold" Margin="0,0,0,6" />
+                        <Border Background="{DynamicResource GlassCardBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,0,0,14">
+                            <StackPanel>
+                                <Grid Margin="0,0,0,10">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="140" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                        <TextBlock Text="Validation Level" FontWeight="SemiBold" FontSize="11.5" />
+                                        <TextBlock Text="Post-conversion fidelity checking" Style="{StaticResource MutedText}" FontSize="10" />
+                                    </StackPanel>
+                                    <ComboBox x:Name="SettingsValidationCombo" Grid.Column="1" VerticalAlignment="Center">
+                                        <ComboBoxItem Content="Basic" />
+                                        <ComboBoxItem Content="Standard" IsSelected="True" />
+                                        <ComboBoxItem Content="Deep" />
+                                    </ComboBox>
+                                </Grid>
+
+                                <Grid Margin="0,0,0,10">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="140" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                        <TextBlock Text="Default PDF DPI" FontWeight="SemiBold" FontSize="11.5" />
+                                        <TextBlock Text="Raster resolution for PDF page rendering" Style="{StaticResource MutedText}" FontSize="10" />
+                                    </StackPanel>
+                                    <ComboBox x:Name="SettingsDpiCombo" Grid.Column="1" VerticalAlignment="Center">
+                                        <ComboBoxItem Content="72 DPI (Web)" />
+                                        <ComboBoxItem Content="100 DPI" />
+                                        <ComboBoxItem Content="150 DPI (Standard)" IsSelected="True" />
+                                        <ComboBoxItem Content="300 DPI (High-Print)" />
+                                    </ComboBox>
+                                </Grid>
+
+                                <Grid Margin="0,0,0,4">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="140" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                        <TextBlock Text="Default Image Quality" FontWeight="SemiBold" FontSize="11.5" />
+                                        <TextBlock Text="JPEG and WebP compression factor" Style="{StaticResource MutedText}" FontSize="10" />
+                                    </StackPanel>
+                                    <ComboBox x:Name="SettingsQualityCombo" Grid.Column="1" VerticalAlignment="Center">
+                                        <ComboBoxItem Content="75%" />
+                                        <ComboBoxItem Content="85% (Optimal)" IsSelected="True" />
+                                        <ComboBoxItem Content="90%" />
+                                        <ComboBoxItem Content="95% (Fine)" />
+                                        <ComboBoxItem Content="100% (Lossless)" />
+                                    </ComboBox>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Group: Performance & User Experience -->
+                        <TextBlock Text="PERFORMANCE &amp; ASSISTANCE" Style="{StaticResource MutedText}" FontSize="10.5" FontWeight="Bold" Margin="0,0,0,6" />
+                        <Border Background="{DynamicResource GlassCardBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,0,0,14">
+                            <StackPanel>
+                                <Grid Margin="0,0,0,10">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="140" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                        <TextBlock Text="Max Concurrency" FontWeight="SemiBold" FontSize="11.5" />
+                                        <TextBlock Text="Parallel batch processing workers" Style="{StaticResource MutedText}" FontSize="10" />
+                                    </StackPanel>
+                                    <ComboBox x:Name="SettingsConcurrencyCombo" Grid.Column="1" VerticalAlignment="Center">
+                                        <ComboBoxItem Content="1 Worker" />
+                                        <ComboBoxItem Content="2 Workers" />
+                                        <ComboBoxItem Content="4 Workers (Default)" IsSelected="True" />
+                                        <ComboBoxItem Content="8 Workers" />
+                                    </ComboBox>
+                                </Grid>
+
+                                <CheckBox x:Name="SettingsNotifyOnCompleteCheck" Content="Show completion banners" IsChecked="True" Margin="0,0,0,8" />
+                                <CheckBox x:Name="SettingsShowFirstRunTipsCheck" Content="Show quick start guide on startup" IsChecked="True" />
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Engine Details Reference -->
+                        <Border Background="{DynamicResource GlassCardBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,0,0,6">
+                            <StackPanel>
+                                <TextBlock Text="Active Local Engines" FontWeight="SemiBold" FontSize="11.5" Margin="0,0,0,6" />
+                                <TextBlock Text="â€¢ Images: SkiaSharp 4 (JPEG, PNG, WebP)" Style="{StaticResource MutedText}" FontSize="10.5" Margin="0,0,0,3" />
+                                <TextBlock Text="â€¢ PDF Preview &amp; Extraction: PDFium / UglyToad.PdfPig / PDFsharp" Style="{StaticResource MutedText}" FontSize="10.5" Margin="0,0,0,3" />
+                                <TextBlock Text="â€¢ Office Documents: Open XML SDK (DOCX, PPTX)" Style="{StaticResource MutedText}" FontSize="10.5" />
+                            </StackPanel>
+                        </Border>
                     </StackPanel>
-                </Border>
-                <!-- Output Folder -->
-                <TextBlock Text="Output Directory" FontWeight="SemiBold" FontSize="12" Margin="0,0,0,4" />
-                <TextBox x:Name="SettingsOutputDirBox" IsReadOnly="True" Margin="0,0,0,8" />
-                <Button Style="{StaticResource SecondaryButton}" Content="Open Outputs in Explorer" Click="OpenOutputs_Click" Margin="0,0,0,16" />
-                <!-- Engine Details -->
-                <Border Background="{DynamicResource GlassCardBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="8" Padding="12">
-                    <StackPanel>
-                        <TextBlock Text="Active Local Engines" FontWeight="SemiBold" FontSize="12" Margin="0,0,0,6" />
-                        <TextBlock Text="â€¢ Images: SkiaSharp (JPEG, PNG, WebP)" Style="{StaticResource MutedText}" FontSize="11" Margin="0,0,0,3" />
-                        <TextBlock Text="â€¢ PDF Preview &amp; Export: PDFium / Docnet.Core" Style="{StaticResource MutedText}" FontSize="11" Margin="0,0,0,3" />
-                        <TextBlock Text="â€¢ PDF Compression &amp; Office Export: UglyToad.PdfPig &amp; OpenXml" Style="{StaticResource MutedText}" FontSize="11" />
-                    </StackPanel>
-                </Border>
-            </StackPanel>
+                </ScrollViewer>
+
+                <!-- Footer with Save, Reset, Feedback -->
+                <StackPanel Grid.Row="2" Margin="0,14,0,0">
+                    <TextBlock x:Name="SettingsStatusText" Text="" Foreground="{DynamicResource OkBrush}" FontSize="11" FontWeight="SemiBold" Margin="0,0,0,8" HorizontalAlignment="Center" Visibility="Collapsed" />
+                    <DockPanel>
+                        <Button DockPanel.Dock="Left" Style="{StaticResource GhostButton}" Content="Reset to Defaults" Click="ResetSettings_Click" Padding="10,6"
+                                ToolTip="Revert all settings to application defaults" AutomationProperties.Name="Reset Settings to Defaults" />
+                        <Button DockPanel.Dock="Right" Style="{StaticResource PrimaryButton}" Content="Save Preferences" Click="SaveSettings_Click" Padding="16,6"
+                                ToolTip="Save and apply configuration changes" AutomationProperties.Name="Save Preferences" />
+                    </DockPanel>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- ========================================== -->
+        <!-- ONBOARDING & CONTEXTUAL HELP OVERLAY       -->
+        <!-- ========================================== -->
+        <Border x:Name="HelpOverlay" Grid.Row="0" Grid.RowSpan="3"
+                Background="#660F172A" Visibility="Collapsed" IsHitTestVisible="True">
+            <Border Width="640" MaxHeight="680" Background="{DynamicResource SurfaceBrush}"
+                    BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="16"
+                    Padding="26" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="36" ShadowDepth="8" Direction="270" Color="#0F172A" Opacity="0.18" />
+                </Border.Effect>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <!-- Header -->
+                    <DockPanel Grid.Row="0" Margin="0,0,0,18">
+                        <Button DockPanel.Dock="Right" Style="{StaticResource GhostButton}" Click="CloseHelpOverlay_Click" Padding="6"
+                                ToolTip="Close Guide (Esc)" AutomationProperties.Name="Close Quick Start Guide">
+                            <Path Data="{StaticResource IconCloseGeometry}" Fill="{DynamicResource MutedBrush}" Width="11" Height="11" Stretch="Uniform" />
+                        </Button>
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <Image Source="Assets/logo.png" Width="36" Height="36" Margin="0,0,12,0" RenderOptions.BitmapScalingMode="HighQuality" />
+                            <StackPanel>
+                                <TextBlock Text="ZUNO Quick Start &amp; Shortcuts" Style="{StaticResource SectionHeading}" FontSize="16" />
+                                <TextBlock Text="Modern, privacy-first local file workspace" Style="{StaticResource MutedText}" FontSize="11" />
+                            </StackPanel>
+                        </StackPanel>
+                    </DockPanel>
+
+                    <!-- Body -->
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="0,0,-8,0" Padding="0,0,8,0">
+                        <StackPanel>
+                            <!-- Card 1: Workflow Basics -->
+                            <Border Background="{DynamicResource SurfaceAltBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="10" Padding="14" Margin="0,0,0,12">
+                                <StackPanel>
+                                    <TextBlock Text="How ZUNO Works" FontWeight="SemiBold" FontSize="13" Foreground="{DynamicResource AccentBrush}" Margin="0,0,0,6" />
+                                    <TextBlock Text="1. Add Files: Drag and drop files anywhere or click Browse files (Ctrl+O).&#x0a;2. Radial Menu: Select an action from the 7-action wheel (keys 1–7) or click an action.&#x0a;3. Universal Convert: Convert seamlessly between PDF, DOCX, PPTX, and raster images.&#x0a;4. Document Studios: Use PDF Merge, Split, Page Organizer, or Presentation Studio via the left sidebar.&#x0a;5. 100% Offline: Your files never leave your computer. Conversions are atomic and non-destructive."
+                                               Style="{StaticResource MutedText}" FontSize="11.5" LineHeight="19" TextWrapping="Wrap" />
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Card 2: Keyboard Shortcuts Reference -->
+                            <Border Background="{DynamicResource SurfaceAltBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="10" Padding="14" Margin="0,0,0,10">
+                                <StackPanel>
+                                    <TextBlock Text="Keyboard Shortcuts Reference" FontWeight="SemiBold" FontSize="13" Foreground="{DynamicResource TextBrush}" Margin="0,0,0,10" />
+                                    <Grid Margin="0,0,0,6">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="130" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="Ctrl + O" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}" FontSize="11.5" />
+                                        <TextBlock Grid.Column="1" Text="Browse and add files to workspace" Style="{StaticResource MutedText}" FontSize="11.5" />
+                                    </Grid>
+                                    <Grid Margin="0,0,0,6">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="130" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="Ctrl + ," FontWeight="Bold" Foreground="{DynamicResource AccentBrush}" FontSize="11.5" />
+                                        <TextBlock Grid.Column="1" Text="Open Application Preferences / Settings" Style="{StaticResource MutedText}" FontSize="11.5" />
+                                    </Grid>
+                                    <Grid Margin="0,0,0,6">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="130" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="F1" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}" FontSize="11.5" />
+                                        <TextBlock Grid.Column="1" Text="Open this Quick Start &amp; Shortcuts guide" Style="{StaticResource MutedText}" FontSize="11.5" />
+                                    </Grid>
+                                    <Grid Margin="0,0,0,6">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="130" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="1 .. 7" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}" FontSize="11.5" />
+                                        <TextBlock Grid.Column="1" Text="Instantly trigger radial action 1 through 7" Style="{StaticResource MutedText}" FontSize="11.5" />
+                                    </Grid>
+                                    <Grid Margin="0,0,0,6">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="130" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="Enter" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}" FontSize="11.5" />
+                                        <TextBlock Grid.Column="1" Text="Run selected action" Style="{StaticResource MutedText}" FontSize="11.5" />
+                                    </Grid>
+                                    <Grid Margin="0,0,0,6">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="130" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="Delete" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}" FontSize="11.5" />
+                                        <TextBlock Grid.Column="1" Text="Remove selected file from queue" Style="{StaticResource MutedText}" FontSize="11.5" />
+                                    </Grid>
+                                    <Grid Margin="0,0,0,6">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="130" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="Escape" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}" FontSize="11.5" />
+                                        <TextBlock Grid.Column="1" Text="Cancel running action or dismiss active overlay" Style="{StaticResource MutedText}" FontSize="11.5" />
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </ScrollViewer>
+
+                    <!-- Footer -->
+                    <DockPanel Grid.Row="2" Margin="0,16,0,0">
+                        <CheckBox x:Name="HelpDoNotShowCheck" DockPanel.Dock="Left" Content="Don't show this guide on startup" VerticalAlignment="Center" FontSize="11.5" />
+                        <Button DockPanel.Dock="Right" Style="{StaticResource PrimaryButton}" Content="Got It" Click="CloseHelpOverlay_Click" Padding="20,6"
+                                HorizontalAlignment="Right" AutomationProperties.Name="Dismiss Guide" />
+                    </DockPanel>
+                </Grid>
+            </Border>
         </Border>
 
         <!-- ========================================== -->
         <!-- LOADING / INGEST OVERLAY                   -->
         <!-- ========================================== -->
-        <Border x:Name="LoadingOverlay" Background="#D9080C14" Visibility="Collapsed" IsHitTestVisible="True"
+        <Border x:Name="LoadingOverlay" Background="#CCFFFFFF" Visibility="Collapsed" IsHitTestVisible="True"
                 Grid.Row="0" Grid.RowSpan="3" CornerRadius="0">
-            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                <Border Width="50" Height="50" CornerRadius="25" Background="{DynamicResource AccentSoftBrush}" Margin="0,0,0,14" HorizontalAlignment="Center">
-                    <Path Data="{StaticResource IconUploadGeometry}" Fill="{DynamicResource AccentBrush}" Width="22" Height="22" Stretch="Uniform" />
-                </Border>
-                <TextBlock x:Name="LoadingTitle" Foreground="White" FontSize="16" FontWeight="SemiBold" Text="Inspecting filesâ€¦" HorizontalAlignment="Center" />
-                <TextBlock x:Name="LoadingDetail" Foreground="#94A3B8" Margin="0,6,0,0" Text="Reading file headers. Originals are never moved." HorizontalAlignment="Center" />
-            </StackPanel>
+            <Border Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"
+                    CornerRadius="14" Padding="28,24" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="24" ShadowDepth="6" Direction="270" Color="#0F172A" Opacity="0.12" />
+                </Border.Effect>
+                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                    <Border Width="52" Height="52" CornerRadius="26" Background="{DynamicResource AccentSoftBrush}" Margin="0,0,0,14" HorizontalAlignment="Center">
+                        <Path Data="{StaticResource IconUploadGeometry}" Fill="{DynamicResource AccentBrush}" Width="22" Height="22" Stretch="Uniform" />
+                    </Border>
+                    <TextBlock x:Name="LoadingTitle" Foreground="{DynamicResource TextBrush}" FontSize="15" FontWeight="SemiBold" Text="Inspecting files…" HorizontalAlignment="Center" />
+                    <TextBlock x:Name="LoadingDetail" Foreground="{DynamicResource MutedBrush}" Margin="0,6,0,0" FontSize="12" Text="Reading file headers. Originals are never moved." HorizontalAlignment="Center" />
+                </StackPanel>
+            </Border>
         </Border>
     </Grid>
 </Window>
